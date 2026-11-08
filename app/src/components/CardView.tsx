@@ -1,10 +1,13 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DEFAULT_RULES, energyCostOf } from '../motor';
 import type { CardDef } from '../motor';
+import { CARD_ASPECT } from '../layout';
 import { colors, ELEMENT_INFO, RARITY_INFO } from '../theme';
 
 interface Props {
   card: CardDef;
+  /** Largura em pixels; a altura sai da proporção da carta (ver layout.ts). */
+  width: number;
   /** Vida atual, para criaturas em campo (o dano persiste entre turnos). Sem isso, mostra a vida da carta. */
   health?: number;
   selected?: boolean;
@@ -15,7 +18,7 @@ interface Props {
 }
 
 /** Desenha uma carta. Só mostra dados; nenhuma regra mora aqui. */
-export function CardView({ card, health, selected = false, dimmed = false, photoUri, onPress }: Props) {
+export function CardView({ card, width, health, selected = false, dimmed = false, photoUri, onPress }: Props) {
   const element = ELEMENT_INFO[card.element];
   const rarity = RARITY_INFO[card.rarity];
   const currentHealth = health ?? card.health;
@@ -26,6 +29,7 @@ export function CardView({ card, health, selected = false, dimmed = false, photo
       disabled={!onPress}
       style={[
         styles.card,
+        { width, height: width / CARD_ASPECT },
         { borderColor: selected ? colors.accent : rarity.color, backgroundColor: colors.panel },
         selected && styles.selected,
         dimmed && styles.dimmed,
@@ -52,8 +56,6 @@ export function CardView({ card, health, selected = false, dimmed = false, photo
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    aspectRatio: 0.72,
     borderRadius: 10,
     borderWidth: 2,
     overflow: 'hidden',

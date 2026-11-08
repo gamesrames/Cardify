@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { CardView } from '../components/CardView';
 import { legalActions } from '../motor';
 import type { Action, Creature, PlayerState } from '../motor';
+import { CARD_ASPECT, cardWidthFor, MAX_APP_WIDTH } from '../layout';
 import { colors } from '../theme';
 import { BOT, HUMAN, useGame } from '../useGame';
 
@@ -22,6 +23,8 @@ type PlayAction = Extract<Action, { type: 'play' }>;
 
 export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onChangeDeck, onMenu }: Props) {
   const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
+  const cardWidth = cardWidthFor(window.width, window.height, insets.top + insets.bottom);
   const { state, log, isHumanTurn, play, endTurn } = useGame(playerDeckName, botDeckName, seed);
   const [selected, setSelected] = useState<number | null>(null);
   const logRef = useRef<ScrollViewInstance>(null);
@@ -81,8 +84,9 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
 
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={styles.column}>
       <PlayerBar title={`🤖 Bot · ${botDeckName}`} player={foe} extra={`🃏 ${foe.hand.length} na mão`} />
-      <Lane field={foe.field} />
+      <Lane field={foe.field} cardWidth={cardWidth} />
 
       <View style={styles.statusBar}>
         <Text style={styles.turn}>Turno {state.turn}</Text>
@@ -91,7 +95,7 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
         </Text>
       </View>
 
-      <Lane field={me.field} mine selectedSlots={playableSlots} onTapSlot={tapMySlot} />
+      <Lane field={me.field} cardWidth={cardWidth} mine selectedSlots={playableSlots} onTapSlot={tapMySlot} />
       <PlayerBar
         title={`🙂 Você · ${playerDeckName}`}
         player={me}
@@ -103,13 +107,14 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
           <CardView
             key={`${card.id}-${i}`}
             card={card}
+            width={cardWidth}
             selected={selected === i}
             dimmed={isHumanTurn && !playableHand.has(i)}
             onPress={() => tapHand(i)}
           />
         ))}
         {Array.from({ length: Math.max(0, state.rules.handSize - me.hand.length) }, (_, i) => (
-          <View key={`empty-${i}`} style={styles.handEmpty} />
+          <View key={`empty-${i}`} style={{ width: cardWidth, height: cardWidth / CARD_ASPECT }} />
         ))}
       </View>
 
@@ -124,6 +129,8 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
           </Text>
         ))}
       </ScrollView>
+
+      </View>
 
       {finished && (
         <View style={styles.overlay}>
@@ -159,11 +166,13 @@ function PlayerBar({ title, player, extra }: { title: string; player: PlayerStat
 
 function Lane({
   field,
+  cardWidth,
   mine = false,
   selectedSlots,
   onTapSlot,
 }: {
   field: (Creature | null)[];
+  cardWidth: number;
   mine?: boolean;
   selectedSlots?: Set<number>;
   onTapSlot?: (slot: number) => void;
@@ -172,10 +181,11 @@ function Lane({
     <View style={styles.lane}>
       {field.map((creature, slot) =>
         creature ? (
-          <CardView key={slot} card={creature.card} health={creature.health} />
+          <CardView key={slot} card={creature.card} width={cardWidth} health={creature.health} />
         ) : (
           <EmptySlot
             key={slot}
+            width={cardWidth}
             label={mine ? `Posição ${slot + 1}` : 'Vazia'}
             highlight={selectedSlots?.has(slot) ?? false}
             onPress={onTapSlot ? () => onTapSlot(slot) : undefined}
@@ -186,10 +196,10 @@ function Lane({
   );
 }
 
-function EmptySlot({ label, highlight, onPress }: { label: string; highlight: boolean; onPress?: () => void }) {
+function EmptySlot({ width, label, highlight, onPress }: { width: number; label: string; highlight: boolean; onPress?: () => void }) {
   return (
     <Pressable
-      style={[styles.slot, highlight && styles.slotHighlight]}
+      style={[styles.slot, { width, height: width / CARD_ASPECT }, highlight && styles.slotHighlight]}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -200,14 +210,14 @@ function EmptySlot({ label, highlight, onPress }: { label: string; highlight: bo
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // Em tela larga (navegador) o jogo fica numa coluna centralizada, como num celular.
+  column: { flex: 1, width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center' },
   playerBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, gap: 10 },
   playerTitle: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '700' },
   hp: { color: colors.text, fontSize: 16, fontWeight: '800' },
   extra: { color: colors.textDim, fontSize: 13 },
-  lane: { flexDirection: 'row', gap: 8, paddingHorizontal: 12 },
+  lane: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, justifyContent: 'center' },
   slot: {
-    flex: 1,
-    aspectRatio: 0.72,
     borderRadius: 10,
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -228,8 +238,7 @@ const styles = StyleSheet.create({
   },
   turn: { color: colors.warn, fontSize: 13, fontWeight: '800' },
   status: { flex: 1, color: colors.text, fontSize: 13 },
-  hand: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8 },
-  handEmpty: { flex: 1, aspectRatio: 0.72 },
+  hand: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8, justifyContent: 'center' },
   actions: { paddingHorizontal: 12, paddingVertical: 8 },
   log: { flex: 1, minHeight: 60, backgroundColor: colors.panel, marginHorizontal: 12, borderRadius: 8 },
   logLine: { color: colors.textDim, fontSize: 12, lineHeight: 17 },

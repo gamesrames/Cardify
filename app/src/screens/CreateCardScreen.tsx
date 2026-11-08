@@ -20,6 +20,9 @@ import type { CategoryOption } from '../supabase';
 import { colors, ELEMENT_INFO } from '../theme';
 import type { Element } from '../motor';
 
+/** Largura da carta no resultado (a altura sai da proporção em layout.ts). */
+const CARD_WIDTH = 160;
+
 interface Props {
   onBack: () => void;
 }
@@ -175,7 +178,7 @@ export function CreateCardScreen({ onBack }: Props) {
       {step.kind === 'done' && (
         <>
           <View style={styles.cardBox}>
-            <CardView card={toCardDef(step.card)} photoUri={step.photo.uri} />
+            <CardView card={toCardDef(step.card)} width={CARD_WIDTH} photoUri={step.photo.uri} />
           </View>
           {step.card.bonusPoints > 0 && (
             <Text style={styles.good}>Bônus da categoria: +{step.card.bonusPoints} de poder</Text>
@@ -217,7 +220,7 @@ const styles = StyleSheet.create({
   bad: { color: colors.bad, fontSize: 16, textAlign: 'center' },
   good: { color: colors.good, fontSize: 15, textAlign: 'center' },
   photo: { width: '100%', height: 220, borderRadius: 12, backgroundColor: colors.panel },
-  cardBox: { width: 200, alignSelf: 'center' },
+  cardBox: { alignSelf: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   chip: { backgroundColor: colors.panelAlt, borderColor: colors.border, borderWidth: 1, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14 },
   chipText: { color: colors.text, fontSize: 15 },
