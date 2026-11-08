@@ -176,7 +176,7 @@ export function CreateCardScreen({ onBack }: Props) {
         <>
           <Image source={{ uri: step.photo.uri }} style={styles.photo} />
           <View style={styles.cardBox}>
-            <CardView card={toCardDef(step.card)} />
+            <CardView card={toCardDef(step.card)} width={160} />
           </View>
           {step.card.bonusPoints > 0 && (
             <Text style={styles.good}>Bônus da categoria: +{step.card.bonusPoints} de poder</Text>
