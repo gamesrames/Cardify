@@ -4,7 +4,7 @@ Pasta: `supabase/`. Dono: thread de backend. Fase 2 em andamento.
 
 ## Estado atual
 
-Escrito e testado no computador, **ainda não aplicado num projeto Supabase real** (falta o usuário criar o projeto). Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 38 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
+Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar com o classificador **manual** (`CLASSIFIER` não definido; nenhum segredo do Gemini salvo). **Ainda não foi chamada por HTTP** (o ambiente de desenvolvimento não alcança `supabase.co`) e o login anônimo precisa ser ligado pelo usuário no painel. Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 38 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
 
 ## Decidido
 
@@ -51,11 +51,11 @@ npm run typecheck
 npm run build       # gera functions/create-card/index.ts (commitar o resultado)
 ```
 
-`functions/create-card/index.ts` é **gerado**: o esbuild junta o código e o motor num arquivo só, porque o Deno das Edge Functions exige extensão nos imports e o motor não usa. Edite `src/`, nunca o gerado. O bundle ainda **não foi executado no Deno** (não há Deno neste ambiente); a primeira publicação precisa conferir isso.
+`functions/create-card/index.ts` é **gerado**: o esbuild junta o código e o motor num arquivo só, porque o Deno das Edge Functions exige extensão nos imports e o motor não usa. Edite `src/`, nunca o gerado. O bundle foi publicado, mas ainda **não foi chamado de verdade** (não há Deno neste ambiente): a primeira chamada pelo app ou por `curl` confirma que ele roda.
 
-## Como publicar (quando o projeto Supabase existir)
+## Como publicar
 
-Passos, a confirmar na primeira vez com o usuário:
+O projeto já existe (URL e chave pública ficam no painel do Supabase, em Project Settings → API; não coloque nos docs). Passos, feitos na primeira publicação e para repetir ao mudar `src/`:
 1. Criar o projeto grátis em supabase.com e ligar **Authentication → Sign In / Providers → Allow anonymous sign-ins**.
 2. Aplicar as duas migrações de `supabase/migrations/`.
 3. Segredos da função (o usuário salva a chave, nós nunca a vemos): `CLASSIFIER=gemini`, `GEMINI_API_KEY=...`, opcional `GEMINI_MODEL`. Sem `CLASSIFIER`, a função usa o classificador manual.

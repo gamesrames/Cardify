@@ -4,7 +4,7 @@ Fase 2 em diante. Dono: thread de geração de cartas (junto com backend no come
 
 ## Estado atual
 
-**Servidor implementado e testado no computador** (branch da fase 2, ainda sem PR): gerador de cartas, hash perceptual, cota diária, duplicatas e classificadores (manual e Gemini) em `supabase/`. **Ainda não rodou num projeto Supabase de verdade** (falta criar o projeto) **nem na câmera do app** (a parte do app ainda não foi feita). O classificador ativo é escolhido pelo segredo `CLASSIFIER` (`manual` por padrão; `gemini` quando a chave estiver salva).
+**Servidor implementado e testado no computador** (branch da fase 2, ainda sem PR): gerador de cartas, hash perceptual, cota diária, duplicatas e classificadores (manual e Gemini) em `supabase/`. **Publicado no projeto Supabase, mas ainda não chamado por HTTP, nem pela câmera do app** (a parte do app ainda não foi feita). O classificador ativo é escolhido pelo segredo `CLASSIFIER` (`manual` por padrão; `gemini` quando a chave estiver salva).
 
 ## Decidido
 
