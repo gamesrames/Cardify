@@ -26,6 +26,7 @@ app/
     useGame.ts               hook: guarda o GameState, aplica ações, faz o bot jogar (pausa de 0,8 s por ação)
     describeEvent.ts         transforma GameEvent em linhas de log em português
     theme.ts                 cores, emojis e nomes de elementos e raridades
+    layout.ts                tamanho das cartas a partir da janela (e layout.test.ts, que garante que a partida cabe na tela)
     components/              Button, CardView (só desenha dados)
     screens/                 HomeScreen, DeckPickScreen, GameScreen
 ```
@@ -56,6 +57,8 @@ Pré-requisitos no computador: Node.js 20 ou mais novo (nodejs.org, versão LTS)
    **iPhone:** abra a câmera do iPhone, aponte para o QR e toque no aviso "Abrir no Expo Go".
 4. O primeiro carregamento leva alguns segundos. Para recarregar depois de mudar código: sacuda o celular e escolha "Reload", ou pressione `r` no terminal.
 
+**Testar no navegador do PC** (útil para depressa, mas o teste que vale é no celular): no terminal do `expo start`, pressione `w`. O jogo aparece numa coluna centralizada de no máximo 480 de largura, e as cartas encolhem para a partida caber na altura da janela. Dependências web (`react-dom`, `react-native-web`) já estão no `package.json`.
+
 Se não conectar:
 - Rode `npx expo start --tunnel` (funciona mesmo em redes que bloqueiam conexões locais; o Expo pede para instalar um pacote, aceite).
 - No Windows, permita o Node.js no firewall quando o aviso aparecer.
@@ -70,6 +73,14 @@ Se não conectar:
 5. Repita no iPhone e no Android. Anote qualquer travamento, texto cortado ou botão difícil de tocar.
 
 Botão voltar do Android durante a partida pede confirmação antes de sair.
+
+## Testes do app
+
+`cd app && npm test` (vitest) e `npm run typecheck`. Hoje cobrem o cálculo de tamanho das cartas (`layout.ts`): a partida precisa caber na altura de desktop e de celular. Mudou o layout da `GameScreen` (barras, botão, log)? Reveja `NON_CARD_HEIGHT` em `layout.ts`; o teste acusa se ficar curto.
+
+## Histórico de correções
+
+- 2026-11-08: no navegador (Expo web, janela larga) o botão "Encerrar turno" ficava fora da tela, pois a carta tinha altura proporcional à largura da janela (1280x720 gerava cartas de ~570 de altura, botão em y=1864). Corrigido com `layout.ts` e coluna de no máximo 480 de largura.
 
 ## A definir
 
