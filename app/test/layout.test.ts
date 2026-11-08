@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardWidthFor, MAX_APP_WIDTH, MIN_CARD_WIDTH, requiredHeight } from './layout';
+import { cardWidthFor, MAX_APP_WIDTH, MIN_CARD_WIDTH, requiredHeight } from '../src/layout';
 
 // Regressão do bug "Encerrar turno some no navegador": numa janela larga (ex.: 1280x720)
 // a carta crescia com a largura e a partida passava da altura da janela.
