@@ -3,3 +3,7 @@ dist/
 .expo/
 *.log
 .DS_Store
+
+# Segredos locais do Supabase: nunca commitar
+supabase/.env*
+supabase/.temp/

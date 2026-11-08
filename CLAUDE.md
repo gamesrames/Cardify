@@ -26,7 +26,7 @@ Jogo de cartas para celular (Android primeiro, iPhone depois) em que fotos tirad
 | `docs/` | Contexto por área (leia antes de trabalhar) | existe |
 | `engine/` | Motor de combate em TypeScript puro, testes e simulador | no `main` (PR #1) |
 | `app/` | App Expo (React Native) | ainda não criada |
-| `supabase/` | Migrações, políticas e Edge Functions | ainda não criada |
+| `supabase/` | Migrações, políticas e Edge Functions (`npm test` dentro da pasta) | fase 2 em andamento (sem projeto Supabase ainda) |
 
 ## Comandos úteis
 

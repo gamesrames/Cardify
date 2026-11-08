@@ -1,10 +1,10 @@
 # Backend (Supabase)
 
-Pasta prevista: `supabase/` (ainda não existe). Dono: thread de backend. Começa na fase 2.
+Pasta: `supabase/`. Dono: thread de backend. Fase 2 em andamento.
 
 ## Estado atual
 
-Nada criado. A stack está decidida (Supabase); o restante é **proposta** até a thread de backend confirmar com o usuário.
+Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar com o classificador **manual** (`CLASSIFIER` não definido; nenhum segredo do Gemini salvo). **Ainda não foi chamada por HTTP** (o ambiente de desenvolvimento não alcança `supabase.co`) e o login anônimo precisa ser ligado pelo usuário no painel. Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
 
 ## Decidido
 
@@ -22,13 +22,44 @@ Nada criado. A stack está decidida (Supabase); o restante é **proposta** até 
 | 3 | Login Google/e-mail (Apple quando houver iOS), coleção e baralhos na nuvem, migração de conta anônima |
 | 4 | Partidas: convite por código, turnos resolvidos no servidor, tempo real para os dois jogadores, tempo limite por turno, reconexão |
 
-## Proposta de dados (rascunho, não é decisão)
+## Dados da fase 2 (implementado em `supabase/migrations/`)
 
-- `profiles`: usuário, data de nascimento/confirmação 18+.
-- `cards`: dono, foto (caminho no storage), categoria, elemento, raridade, ataque, vida, semente, hash perceptual, criada em.
-- `decks` e `deck_cards`: baralhos de 7.
-- `matches` e `match_actions`: estado serializado do motor + ações aplicadas (permite repetir a partida pela semente).
-- `daily_photo_quota` (ou contagem derivada de `cards`): fotos por dia.
+- `categories`: `slug`, `nome`, `element`, `bonus_pct` (0 a 10), `ativa`. 25 categorias iniciais.
+- `app_config`: `daily_photo_limit` (14 nos testes; 3 no jogo final) e `duplicate_max_distance` (10). Mudam com um `UPDATE`, sem deploy.
+- `cards`: dono, nome, `photo_path`, `photo_hash bit(64)`, categoria, elemento, raridade, ataque, vida, `seed`, `bonus_points`, data. O cliente só lê as próprias.
+- `photo_check(usuário, hash)` → `ok` | `quota_exceeded` | `duplicate`. Cota = cartas do dia em São Paulo.
+- `insert_card(...)`: lock por usuário, refaz `photo_check` e insere. Só a chave de serviço executa (revogado de `anon` e `authenticated`).
+- Rascunho para as próximas fases (não é decisão): `profiles`, `decks`/`deck_cards`, `matches`/`match_actions`.
+
+## Contrato da função `create-card` (app ↔ servidor)
+
+`POST /functions/v1/create-card`, cabeçalho `Authorization: Bearer <token do login anônimo>`.
+
+Entrada (JSON): `{ "photo": "<JPEG ou PNG em base64, até 4 MB>", "mime": "image/jpeg", "category": "<slug>" }`. `category` só vale com o classificador manual; com Gemini é ignorado.
+
+Saída `201`: `{ "card": { id, name, category, element, rarity, attack, health, bonusPoints, photoPath, createdAt } }`.
+
+Erros: `401 unauthorized`, `400 invalid_request`, `429 quota_exceeded`, `409 duplicate_photo`, `422 category_not_recognized`, `502 classifier_unavailable`, `500 internal`. Corpo: `{ "error": "<código>", "message": "<texto em português>" }`.
+
+## Como rodar e testar (no computador)
+
+```bash
+cd supabase
+npm install
+npm test            # 39 testes, ~25 s (cada teste sobe um Postgres em memória)
+npm run typecheck
+npm run build       # gera functions/create-card/index.ts (commitar o resultado)
+```
+
+`functions/create-card/index.ts` é **gerado**: o esbuild junta o código e o motor num arquivo só, porque o Deno das Edge Functions exige extensão nos imports e o motor não usa. Edite `src/`, nunca o gerado. O bundle foi publicado, mas ainda **não foi chamado de verdade** (não há Deno neste ambiente): a primeira chamada pelo app ou por `curl` confirma que ele roda.
+
+## Como publicar
+
+O projeto já existe (URL e chave pública ficam no painel do Supabase, em Project Settings → API; não coloque nos docs). Passos, feitos na primeira publicação e para repetir ao mudar `src/`:
+1. Criar o projeto grátis em supabase.com e ligar **Authentication → Sign In / Providers → Allow anonymous sign-ins**.
+2. Aplicar as duas migrações de `supabase/migrations/`.
+3. Segredos da função (o usuário salva a chave, nós nunca a vemos): `CLASSIFIER=gemini`, `GEMINI_API_KEY=...`, opcional `GEMINI_MODEL`. Sem `CLASSIFIER`, a função usa o classificador manual.
+4. Publicar `functions/create-card/index.ts` como função `create-card` (com verificação de JWT ligada).
 
 ## Segurança
 
