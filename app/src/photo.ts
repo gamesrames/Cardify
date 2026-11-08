@@ -3,7 +3,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 const MAX_WIDTH = 1280;
 
 export interface PreparedPhoto {
-  /** Arquivo local, para mostrar na tela. */
+  /** Foto como data URI, para mostrar na tela. */
   uri: string;
   /** JPEG em base64, sem prefixo. */
   base64: string;
@@ -22,5 +22,6 @@ export async function preparePhoto(uri: string, width: number): Promise<Prepared
     base64: true,
   });
   if (!result.base64) throw new Error('Não consegui preparar a foto.');
-  return { uri: result.uri, base64: result.base64 };
+  // data URI: aparece igual no celular e no navegador (o `uri` de arquivo/blob nem sempre carrega no web).
+  return { uri: `data:image/jpeg;base64,${result.base64}`, base64: result.base64 };
 }
