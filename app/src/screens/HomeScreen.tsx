@@ -5,6 +5,7 @@ import { colors, ELEMENT_INFO } from '../theme';
 
 interface Props {
   onPlay: () => void;
+  onCreateCard: () => void;
 }
 
 /** Ciclo de vantagens montado a partir do motor (nada de regra copiada aqui). */
@@ -17,12 +18,12 @@ function advantageCycle(): string {
   return parts.join('  ·  ');
 }
 
-export function HomeScreen({ onPlay }: Props) {
+export function HomeScreen({ onPlay, onCreateCard }: Props) {
   const r = DEFAULT_RULES;
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Cardify</Text>
-      <Text style={styles.subtitle}>Protótipo da fase 1 · offline</Text>
+      <Text style={styles.subtitle}>Protótipo · fases 1 e 2</Text>
 
       <View style={styles.box}>
         <Text style={styles.boxTitle}>Como jogar</Text>
@@ -37,6 +38,7 @@ export function HomeScreen({ onPlay }: Props) {
       </View>
 
       <Button label="Jogar contra o bot" onPress={onPlay} />
+      <Button label="Criar carta com uma foto" variant="secondary" onPress={onCreateCard} />
     </ScrollView>
   );
 }

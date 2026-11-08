@@ -8,6 +8,24 @@ Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolhe
 
 Fora desta entrega (planejado): coleção de cartas, montar baralho próprio de 7 cartas, animações. Hoje o jogador só escolhe um dos 5 baralhos prontos (`PREBUILT_DECKS`).
 
+## Fase 2: tela "Criar carta" (PR separado do PR do servidor)
+
+Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API (`npm test` em `app/`) e empacotamento do Metro para Android. **Ainda não testada em aparelho** nem chamada contra o servidor real.
+
+- Início → "Criar carta com uma foto" → câmera do app (`expo-camera`, funciona no Expo Go) → foto reduzida a 1280 px e regravada como JPEG (some o EXIF; `expo-image-manipulator`) → com o classificador manual, escolher a categoria numa lista → envio à função `create-card` → carta aparece com o `CardView`.
+- Login anônimo automático (`supabase.auth.signInAnonymously`), sessão guardada no aparelho (AsyncStorage). Sem sessão guardada (app reinstalado), vira outro usuário anônimo: as cartas antigas ficam no servidor, mas não voltam (a fase 3 resolve com login de verdade).
+- Erros do servidor mostram a mensagem em português (cota do dia, foto repetida...). Falhas de rede e do reconhecimento têm "Tentar de novo".
+- Arquivos: `src/cardApi.ts` (chamada HTTP, sem React Native, testável), `src/supabase.ts` (cliente e sessão), `src/photo.ts` (reduzir/regravar), `src/screens/CreateCardScreen.tsx`.
+- Configuração: copie `app/.env.example` para `app/.env.local` e preencha a URL e a chave pública (publishable) do projeto (Supabase → Project Settings → API). `EXPO_PUBLIC_MANUAL_CATEGORY=true` mostra a lista de categorias; use `false` quando o Gemini estiver ligado no servidor. Depois de mudar o `.env.local`, rode `npx expo start -c`.
+- No navegador (`w` no Expo; já inclui `react-dom` e `react-native-web`), aparece um botão extra para escolher um arquivo, só para testar no computador sem câmera. Empacotamento web verificado (`expo export --platform web`).
+
+### Como testar a criação de carta
+
+1. Servidor: o login anônimo precisa estar ligado no painel do Supabase (Authentication → Sign In / Providers → Allow anonymous sign-ins).
+2. `cd app && npm install && npx expo start -c`. No celular, escaneie o QR (mesmo roteiro da fase 1) e permita a câmera.
+3. Criar carta → tirar foto → escolher a categoria → a carta aparece em poucos segundos.
+4. Tire a mesma foto de novo: deve aparecer "Essa foto (ou uma quase igual) já virou carta". A 15ª foto do dia deve ser recusada.
+
 ## Decidido
 
 - Expo SDK 58 (React Native, TypeScript). Plataforma principal: Android; iPhone 14 Pro Max via Expo Go (não precisa de Mac).
@@ -74,7 +92,7 @@ Botão voltar do Android durante a partida pede confirmação antes de sair.
 ## A definir
 
 - Biblioteca de navegação e de estado: reavaliar quando entrar câmera e coleção (fase 2).
-- Fase 2: câmera, remoção de EXIF no celular e classificação da foto no aparelho exigem um **development build** (o Expo Go não basta). Ver `geracao-cartas.md`.
+- Coleção (listar as cartas criadas) e montar baralho com elas: fases 2/3; hoje a carta criada só aparece no resultado.
 
 ## Convenções
 

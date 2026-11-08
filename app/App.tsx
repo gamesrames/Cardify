@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PREBUILT_DECKS } from './src/motor';
+import { CreateCardScreen } from './src/screens/CreateCardScreen';
 import { DeckPickScreen } from './src/screens/DeckPickScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -13,6 +14,7 @@ import { colors } from './src/theme';
 type Screen =
   | { name: 'home' }
   | { name: 'decks' }
+  | { name: 'create' }
   | { name: 'game'; playerDeck: string; botDeck: string; seed: number };
 
 /** A semente é sorteada AQUI (camada de tela). O motor em si nunca usa Math.random. */
@@ -48,10 +50,15 @@ export default function App() {
             onChangeDeck={() => setScreen({ name: 'decks' })}
             onMenu={() => setScreen({ name: 'home' })}
           />
+        ) : screen.name === 'create' ? (
+          // Tela cheia (a câmera ocupa tudo); o Layout interno cuida do resto.
+          <SafeAreaView style={styles.root}>
+            <CreateCardScreen onBack={() => setScreen({ name: 'home' })} />
+          </SafeAreaView>
         ) : (
           <SafeAreaView style={styles.root}>
             {screen.name === 'home' ? (
-              <HomeScreen onPlay={() => setScreen({ name: 'decks' })} />
+              <HomeScreen onPlay={() => setScreen({ name: 'decks' })} onCreateCard={() => setScreen({ name: 'create' })} />
             ) : (
               <DeckPickScreen onStart={startGame} onBack={() => setScreen({ name: 'home' })} />
             )}
