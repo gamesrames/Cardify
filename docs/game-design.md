@@ -4,7 +4,7 @@ Dono: thread de motor/balanceamento. Valores aqui são a referência; o código 
 
 ## Estado atual
 
-Fórmulas v0 aprovadas pelo usuário em 2026-11-08 e implementadas no motor (PR #1). Depois da primeira rodada de balanceamento, o orçamento da raridade **épica subiu de 24 para 27** e 9 cartas tiveram ataque/vida redistribuídos (ver "Balanceamento"). Valores ainda **provisórios**: o simulador existe para ajustá-los.
+Fórmulas v0 aprovadas pelo usuário em 2026-11-08 e implementadas no motor (PR #1). Depois da primeira rodada de balanceamento, o orçamento da raridade **épica subiu de 24 para 27** e 9 cartas tiveram ataque/vida redistribuídos (ver "Balanceamento"). Valores ainda **provisórios** (a épica em 27 já foi aprovada): o simulador existe para ajustá-los.
 
 ## Regras da partida
 
@@ -55,7 +55,7 @@ Primeira rodada (PR #1, simulador com 20 mil partidas, bot guloso contra bot gul
 - **Orçamento da épica de 24 para 27**, o que também mudou Leão (9/9), Urso (8/11) e Tubarão (9/9). Resultado: épicas de 44,7% para 48,4%; pior carta a 6,3 pontos de 50%; todas as raridades entre 48% e 53%.
 - Segundo jogador com +2 de energia no primeiro turno: vitória de quem começa em ~51%.
 
-Em aberto: confirmar com o usuário o orçamento da épica em 27 (a decisão original era 24) e rodar o simulador de novo se alguma regra mudar. Critério de aceite da fase 1: nenhuma carta passa de 60% nos baralhos em que aparece.
+Orçamento da épica em 27 aprovado pelo usuário em 2026-11-08 (a v0 original era 24). Rodar o simulador de novo se alguma regra mudar. Critério de aceite da fase 1: nenhuma carta passa de 60% nos baralhos em que aparece.
 
 ## Como propor mudança de regra
 
