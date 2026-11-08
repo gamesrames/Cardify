@@ -22,28 +22,28 @@ export const CARDS: readonly CardDef[] = [
   c('planta-coelho', 'Coelho', 'planta', 'incomum', 4, 7),
   c('planta-cervo', 'Cervo', 'planta', 'rara', 5, 8),
   c('planta-urso', 'Urso', 'planta', 'epica', 7, 10),
-  c('planta-ent', 'Ent', 'planta', 'lendaria', 8, 12),
+  c('planta-ent', 'Ent', 'planta', 'lendaria', 9, 10),
   // Terra
   c('terra-minhoca', 'Minhoca', 'terra', 'comum', 1, 7),
   c('terra-tatu', 'Tatu', 'terra', 'comum', 3, 3),
   c('terra-texugo', 'Texugo', 'terra', 'incomum', 5, 5),
   c('terra-javali', 'Javali', 'terra', 'rara', 7, 4),
-  c('terra-elefante', 'Elefante', 'terra', 'epica', 6, 12),
+  c('terra-elefante', 'Elefante', 'terra', 'epica', 7, 10),
   c('terra-golem', 'Golem', 'terra', 'lendaria', 9, 10),
   // Ar
   c('ar-mosquito', 'Mosquito', 'ar', 'comum', 4, 1),
   c('ar-pardal', 'Pardal', 'ar', 'comum', 3, 3),
   c('ar-gaivota', 'Gaivota', 'ar', 'incomum', 6, 3),
   c('ar-falcao', 'Falcão', 'ar', 'rara', 7, 4),
-  c('ar-aguia', 'Águia', 'ar', 'epica', 9, 6),
-  c('ar-condor', 'Condor', 'ar', 'lendaria', 11, 6),
+  c('ar-aguia', 'Águia', 'ar', 'epica', 8, 8),
+  c('ar-condor', 'Condor', 'ar', 'lendaria', 10, 8),
   // Água
   c('agua-sapo', 'Sapo', 'agua', 'comum', 2, 5),
   c('agua-peixe', 'Peixe', 'agua', 'comum', 3, 3),
   c('agua-tartaruga', 'Tartaruga', 'agua', 'incomum', 3, 9),
-  c('agua-foca', 'Foca', 'agua', 'rara', 4, 10),
+  c('agua-foca', 'Foca', 'agua', 'rara', 5, 8),
   c('agua-tubarao', 'Tubarão', 'agua', 'epica', 8, 8),
-  c('agua-baleia', 'Baleia', 'agua', 'lendaria', 8, 12),
+  c('agua-baleia', 'Baleia', 'agua', 'lendaria', 9, 10),
 ];
 
 const BY_ID = new Map(CARDS.map((card) => [card.id, card]));
