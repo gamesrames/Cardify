@@ -53,6 +53,10 @@ export interface Rules {
   disadvantageMultiplier: number;
   energyCost: Record<Rarity, number>;
   powerBudget: Record<Rarity, number>;
+  /** Teto do bônus de poder dado pela categoria da foto, como fração do orçamento da raridade (mínimo +1). */
+  photoBonusRatio: number;
+  /** Teto de poder ganho com melhorias de carta, como fração do orçamento da raridade. */
+  upgradeRatio: number;
 }
 
 export interface GameState {

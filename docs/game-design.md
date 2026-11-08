@@ -38,8 +38,9 @@ Fogo > Planta > Terra > Ar > Água > Fogo
 | Lendária | 3 | 28 |
 
 - **Limite de poder do baralho: 110** (soma dos poderes das 7 cartas).
-- **Bônus por categoria da foto** (fase 2): até **+10% do orçamento**, e conta para o limite do baralho. Exemplo: galinha ganha mais que formiga, mas nunca muito.
-- **Melhoria de carta** (fase 5): até **+25%**, com teto por raridade.
+- **Bônus por categoria da foto** (fase 2): até **+10% do orçamento** (arredondado para baixo, **mínimo +1** quando a categoria tem bônus), e conta para o limite do baralho. Exemplo: galinha ganha mais que formiga, mas nunca muito. Teto por raridade: comum +1, incomum +1, rara +1, épica +2, lendária +2.
+- **Melhoria de carta** (fase 5): até **+25%** do orçamento, arredondado para baixo, com teto por raridade (comum +2, incomum +3, rara +4, épica +6, lendária +7).
+- **Teto de poder de uma carta** = orçamento + bônus de foto + melhoria (comum 12, incomum 19, rara 23, épica 35, lendária 37). `validateDeck` aceita cartas até esse teto; o limite de 110 do baralho conta o **poder real** das cartas.
 - Atributos e raridade vêm sempre do servidor; o cliente nunca decide.
 
 ## Cartas fixas da fase 1

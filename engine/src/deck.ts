@@ -1,4 +1,4 @@
-import { cardPower } from './rules';
+import { cardPower, maxCardPower, photoBonusCap, upgradeCap } from './rules';
 import type { CardDef, Rules } from './types';
 
 export function deckPower(deck: readonly CardDef[]): number {
@@ -17,9 +17,13 @@ export function validateDeck(deck: readonly CardDef[], rules: Rules): string[] {
   }
   for (const card of deck) {
     const power = cardPower(card);
-    const budget = rules.powerBudget[card.rarity];
-    if (power > budget) {
-      problems.push(`${card.name} tem poder ${power}, acima do orçamento ${budget} da raridade ${card.rarity}.`);
+    const max = maxCardPower(card.rarity, rules);
+    if (power > max) {
+      const budget = rules.powerBudget[card.rarity];
+      problems.push(
+        `${card.name} tem poder ${power}, acima do máximo ${max} da raridade ${card.rarity} ` +
+          `(orçamento ${budget} + bônus de foto ${photoBonusCap(card.rarity, rules)} + melhoria ${upgradeCap(card.rarity, rules)}).`,
+      );
     }
   }
   const total = deckPower(deck);

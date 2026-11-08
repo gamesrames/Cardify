@@ -36,9 +36,16 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Fase 1 sem biblioteca de navegação nem de estado: um `useState` escolhe a tela e um hook (`useGame`) guarda o `GameState`. Reavaliar na fase 2 (câmera, coleção). | São 3 telas; biblioteca seria peso sem ganho. | App |
 | Na fase 1 o humano é sempre o jogador 0 e o bot o jogador 1; o bot usa `greedyBot` e joga com um baralho pronto sorteado, diferente do escolhido. A semente é sorteada na camada de tela (`Math.random` só fora do motor). | Escopo mínimo jogável; a semente fica visível no fim da partida para reproduzir. | App |
 
+## 2026-11-08 (bônus de foto na validação)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Bônus de categoria da foto: até +10% do orçamento da raridade, arredondado para baixo, com **mínimo de +1** quando a categoria tem bônus (comum +1, incomum +1, rara +1, épica +2, lendária +2). Aprovado pelo usuário em 2026-11-08. | Sem o mínimo, o bônus de 10% sobre 9 de poder (comum) valeria 0 e a foto não faria diferença nas comuns. | Game design |
+| `validateDeck` compara o poder de cada carta com o teto = orçamento + bônus de foto + melhoria (25%, planejada): comum 12, incomum 19, rara 23, épica 35, lendária 37. O limite de 110 do baralho conta o poder real. Substitui "poder da carta ≤ orçamento da raridade". | Antes, qualquer carta com bônus (poder acima do orçamento) seria recusada em todo baralho. | Motor |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
-- Tamanho final do bônus de categoria e do teto de melhoria por raridade.
+- Teto final de melhoria por raridade (hoje 25% do orçamento, só reservado na validação) e a lista de categorias com seus bônus.
 - Biblioteca de classificação de foto no celular.
 - Bibliotecas de navegação e de estado do app.
