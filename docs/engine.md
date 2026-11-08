@@ -4,7 +4,9 @@ Pasta: `engine/`. Dono: thread de motor/balanceamento. Regras e fórmulas ficam 
 
 ## Estado atual
 
-Implementado e aberto como **PR #1** (branch `fase-1-motor-de-combate`, ainda não está no `main`): motor, 30 cartas, validação de baralho, 5 baralhos prontos, bot guloso, bot aleatório, simulador e 14 testes (vitest). O PR já inclui a primeira rodada de balanceamento: orçamento da épica em 27 e ataque/vida de 9 cartas redistribuídos (detalhes em `game-design.md`). O segundo jogador recebe +2 de energia no primeiro turno (`secondPlayerBonusEnergy`). Os caminhos abaixo existem depois que o PR entrar.
+Motor no `main` desde o **PR #1**: 30 cartas, validação de baralho, 5 baralhos prontos, bot guloso, bot aleatório, simulador e 18 testes (vitest). Balanceamento da primeira rodada já incluído: orçamento da épica em 27 e ataque/vida de 9 cartas redistribuídos (detalhes em `game-design.md`). O segundo jogador recebe +2 de energia no primeiro turno (`secondPlayerBonusEnergy`).
+
+**Bônus de foto e melhorias na validação:** `validateDeck` não compara mais o poder da carta com o orçamento da raridade, e sim com o **teto da carta** = orçamento + bônus de foto (10%, mínimo +1) + melhoria (25%), calculado por `maxCardPower(rarity, rules)` (`photoBonusCap` e `upgradeCap` dão as partes). Isso deixa cartas com bônus de categoria, e depois melhoradas, entrarem no baralho. O limite de 110 do baralho continua contando o poder real de cada carta (`deckPower`). As frações ficam em `Rules` (`photoBonusRatio`, `upgradeRatio`).
 
 ## Princípios
 
@@ -20,8 +22,8 @@ Implementado e aberto como **PR #1** (branch `fase-1-motor-de-combate`, ainda n�
 | `createGame(deckA, deckB, seed, rules?)` | Valida os dois baralhos, embaralha com a semente, sorteia quem começa e devolve `{ state, events }`. Lança erro se o baralho for inválido. |
 | `legalActions(state)` | Lista as ações permitidas ao jogador ativo: `{type:'play', handIndex, slot}` e `{type:'end'}`. |
 | `applyAction(state, action)` | Aplica uma ação e devolve `{ state, events }`. Lança erro para ação ilegal. `end` resolve os ataques e passa o turno. |
-| `validateDeck(deck, rules)` | Devolve a lista de problemas (vazia = válido): tamanho, repetidas, orçamento por raridade, limite de poder. |
-| `cardPower`, `deckPower`, `energyCostOf`, `damageAgainst`, `elementMultiplier` | Helpers de regra. |
+| `validateDeck(deck, rules)` | Devolve a lista de problemas (vazia = válido): tamanho, repetidas, teto de poder por raridade (orçamento + bônus de foto + melhoria) e limite de poder do baralho. |
+| `cardPower`, `deckPower`, `energyCostOf`, `damageAgainst`, `elementMultiplier`, `maxCardPower`, `photoBonusCap`, `upgradeCap` | Helpers de regra. |
 | `greedyBot`, `makeRandomBot(rng)` | Bots. Cada chamada devolve **uma** ação; chame de novo até vir `{type:'end'}`. O guloso é determinístico. |
 | `CARDS`, `PREBUILT_DECKS` | Cartas fixas da fase 1 e baralhos prontos. |
 | `GameEvent` | Eventos para o app animar/mostrar o log (`turn_start`, `draw`, `play`, `attack_creature`, `attack_player`, `creature_died`, `game_over`). |

@@ -7,12 +7,17 @@ import {
   cardPower,
   createGame,
   damageAgainst,
+  deckPower,
   elementMultiplier,
   getCard,
   getCards,
   greedyBot,
   legalActions,
+  maxCardPower,
+  photoBonusCap,
+  upgradeCap,
   validateDeck,
+  type CardDef,
   type Action,
   type GameState,
 } from '../src/index';
@@ -67,6 +72,58 @@ describe('baralhos', () => {
     expect(validateDeck(getCards(['fogo-formiga']), DEFAULT_RULES).join(' ')).toMatch(/precisa ter/);
     const repetido = getCards(['fogo-formiga', 'fogo-formiga', 'fogo-lagartixa', 'fogo-raposa', 'fogo-tigre', 'terra-tatu', 'ar-pardal']);
     expect(validateDeck(repetido, DEFAULT_RULES).join(' ')).toMatch(/repetidas/);
+  });
+});
+
+describe('bônus de foto e melhorias', () => {
+  const r = DEFAULT_RULES;
+
+  it('tetos por raridade: bônus 10% (mínimo +1) e melhoria 25%', () => {
+    expect(photoBonusCap('comum', r)).toBe(1); // 10% de 9 = 0,9 → mínimo 1
+    expect(photoBonusCap('incomum', r)).toBe(1);
+    expect(photoBonusCap('rara', r)).toBe(1);
+    expect(photoBonusCap('epica', r)).toBe(2);
+    expect(photoBonusCap('lendaria', r)).toBe(2);
+    expect(upgradeCap('comum', r)).toBe(2);
+    expect(upgradeCap('epica', r)).toBe(6);
+    expect(maxCardPower('comum', r)).toBe(12); // 9 + 1 + 2
+    expect(maxCardPower('lendaria', r)).toBe(37); // 28 + 2 + 7
+  });
+
+  /** Variante da carta com `extra` de poder a mais, todo na vida (simula bônus de foto ou melhoria). */
+  function withPower(card: CardDef, extra: number): CardDef {
+    return { ...card, health: card.health + extra };
+  }
+
+  it('baralho aceita carta com bônus de foto acima do orçamento da raridade', () => {
+    const deck = getCards(PREBUILT_DECKS['Brasa e Ferro']!);
+    const comum = deck.find((c) => c.rarity === 'comum')!;
+    const boosted = deck.map((c) => (c.id === comum.id ? withPower(c, photoBonusCap('comum', r)) : c));
+    expect(cardPower(boosted.find((c) => c.id === comum.id)!)).toBe(r.powerBudget.comum + 1);
+    expect(validateDeck(boosted, r)).toEqual([]);
+  });
+
+  it('aceita até o teto (orçamento + bônus + melhoria) e recusa acima dele', () => {
+    const deck = getCards(PREBUILT_DECKS['Brasa e Ferro']!);
+    const comum = deck.find((c) => c.rarity === 'comum')!;
+    const swap = (extra: number) => deck.map((c) => (c.id === comum.id ? withPower(c, extra) : c));
+    const room = maxCardPower('comum', r) - r.powerBudget.comum; // 3
+    expect(validateDeck(swap(room), r)).toEqual([]);
+    expect(validateDeck(swap(room + 1), r).join(' ')).toMatch(/acima do máximo 12/);
+  });
+
+  it('o limite de poder do baralho conta o poder real, incluindo bônus', () => {
+    // 4 comuns (36) + 1 rara (18) + 2 lendárias (56) = 110, exatamente o limite.
+    const ids = ['fogo-formiga', 'terra-tatu', 'ar-pardal', 'agua-peixe', 'fogo-tigre', 'planta-ent', 'terra-golem'];
+    const deck = getCards(ids);
+    expect(deckPower(deck)).toBe(r.deckPowerLimit);
+    expect(validateDeck(deck, r)).toEqual([]);
+
+    // Um +1 de bônus de foto numa das cartas leva o baralho a 111: recusado pelo limite, não pela carta.
+    const boosted = deck.map((c) => (c.id === 'fogo-formiga' ? withPower(c, 1) : c));
+    const problems = validateDeck(boosted, r);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/limite 110/);
   });
 });
 

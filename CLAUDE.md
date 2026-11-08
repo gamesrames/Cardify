@@ -24,10 +24,10 @@ Jogo de cartas para celular (Android primeiro, iPhone depois) em que fotos tirad
 | Pasta | O que é | Estado |
 | --- | --- | --- |
 | `docs/` | Contexto por área (leia antes de trabalhar) | existe |
-| `engine/` | Motor de combate em TypeScript puro, testes e simulador | em revisão (PR #1) |
+| `engine/` | Motor de combate em TypeScript puro, testes e simulador | no `main` (PR #1) |
 | `app/` | App Expo (React Native) | ainda não criada |
 | `supabase/` | Migrações, políticas e Edge Functions (`npm test` dentro da pasta) | fase 2 em andamento (sem projeto Supabase ainda) |
 
 ## Comandos úteis
 
-O motor (depois que o PR #1 entrar): `cd engine && npm install && npm test && npm run typecheck && npm run sim -- --games 10000`.
+O motor: `cd engine && npm install && npm test && npm run typecheck && npm run sim -- --games 10000`.

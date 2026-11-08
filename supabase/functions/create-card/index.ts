@@ -115,8 +115,13 @@ var DEFAULT_RULES = {
   advantageMultiplier: 1.5,
   disadvantageMultiplier: 0.75,
   energyCost: { comum: 1, incomum: 2, rara: 2, epica: 3, lendaria: 3 },
-  powerBudget: { comum: 9, incomum: 15, rara: 18, epica: 27, lendaria: 28 }
+  powerBudget: { comum: 9, incomum: 15, rara: 18, epica: 27, lendaria: 28 },
+  photoBonusRatio: 0.1,
+  upgradeRatio: 0.25
 };
+function photoBonusCap(rarity, rules) {
+  return Math.max(1, Math.floor(rules.powerBudget[rarity] * rules.photoBonusRatio));
+}
 
 // ../engine/src/rng.ts
 function nextRandom(state) {
@@ -213,16 +218,17 @@ function rollRarity(rng) {
   }
   return "comum";
 }
-function categoryBonusPoints(budget, bonusPct) {
+function categoryBonusPoints(rarity, bonusPct, rules = DEFAULT_RULES) {
   const pct = Math.min(Math.max(bonusPct, 0), MAX_CATEGORY_BONUS_PCT);
   if (pct === 0) return 0;
-  return Math.max(1, Math.floor(budget * pct / 100));
+  const raw = Math.max(1, Math.floor(rules.powerBudget[rarity] * pct / 100));
+  return Math.min(raw, photoBonusCap(rarity, rules));
 }
 function generateCard(input, rules = DEFAULT_RULES) {
   const rng = new Rng(input.seed);
   const rarity = rollRarity(rng);
   const budget = rules.powerBudget[rarity];
-  const bonusPoints = categoryBonusPoints(budget, input.category.bonusPct);
+  const bonusPoints = categoryBonusPoints(rarity, input.category.bonusPct, rules);
   const total = budget + bonusPoints;
   const share = ATTACK_SHARE.min + rng.next() * (ATTACK_SHARE.max - ATTACK_SHARE.min);
   const maxAttack = Math.floor((total - 1) / 2);

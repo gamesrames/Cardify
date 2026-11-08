@@ -4,7 +4,7 @@ Pasta: `supabase/`. Dono: thread de backend. Fase 2 em andamento.
 
 ## Estado atual
 
-Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar com o classificador **manual** (`CLASSIFIER` não definido; nenhum segredo do Gemini salvo). **Ainda não foi chamada por HTTP** (o ambiente de desenvolvimento não alcança `supabase.co`) e o login anônimo precisa ser ligado pelo usuário no painel. Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 38 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
+Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar com o classificador **manual** (`CLASSIFIER` não definido; nenhum segredo do Gemini salvo). **Ainda não foi chamada por HTTP** (o ambiente de desenvolvimento não alcança `supabase.co`) e o login anônimo precisa ser ligado pelo usuário no painel. Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
 
 ## Decidido
 
@@ -46,7 +46,7 @@ Erros: `401 unauthorized`, `400 invalid_request`, `429 quota_exceeded`, `409 dup
 ```bash
 cd supabase
 npm install
-npm test            # 38 testes, ~25 s (cada teste sobe um Postgres em memória)
+npm test            # 39 testes, ~25 s (cada teste sobe um Postgres em memória)
 npm run typecheck
 npm run build       # gera functions/create-card/index.ts (commitar o resultado)
 ```

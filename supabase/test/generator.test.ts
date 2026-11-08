@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RULES, Rng, RARITIES, cardPower } from '../src/motor';
+import { DEFAULT_RULES, Rng, RARITIES, cardPower, maxCardPower, photoBonusCap } from '../src/motor';
+import { validateDeck } from '../../engine/src';
 import { MAX_CATEGORY_BONUS_PCT, RARITY_WEIGHTS, categoryBonusPoints, generateCard, rollRarity } from '../src/create-card/generator';
 import type { Category } from '../src/create-card/types';
 
@@ -16,7 +17,8 @@ describe('gerador de cartas', () => {
       const card = generateCard({ seed, category: cavalo });
       const budget = DEFAULT_RULES.powerBudget[card.rarity];
       expect(cardPower(card)).toBe(budget + card.bonusPoints);
-      expect(card.bonusPoints).toBe(Math.max(1, Math.floor(budget * 0.1)));
+      expect(card.bonusPoints).toBe(photoBonusCap(card.rarity, DEFAULT_RULES));
+      expect(cardPower(card)).toBeLessThanOrEqual(maxCardPower(card.rarity, DEFAULT_RULES));
       expect(card.attack).toBeGreaterThanOrEqual(1);
       expect(card.health).toBeGreaterThanOrEqual(1);
     }
@@ -54,16 +56,25 @@ describe('gerador de cartas', () => {
     expect(RARITIES.reduce((s, r) => s + RARITY_WEIGHTS[r], 0)).toBe(100);
   });
 
-  it('bônus de categoria nunca passa de 10% mesmo com valor absurdo', () => {
-    expect(categoryBonusPoints(28, 500)).toBe(Math.floor((28 * MAX_CATEGORY_BONUS_PCT) / 100));
-    expect(categoryBonusPoints(28, -5)).toBe(0);
+  it('bônus de categoria nunca passa do teto do motor, mesmo com valor absurdo', () => {
+    expect(categoryBonusPoints('lendaria', 500)).toBe(photoBonusCap('lendaria', DEFAULT_RULES));
+    expect(categoryBonusPoints('lendaria', -5)).toBe(0);
   });
 
   it('categoria com algum bônus dá no mínimo +1, até na comum; sem bônus dá 0', () => {
-    expect(categoryBonusPoints(9, 1)).toBe(1);
-    expect(categoryBonusPoints(9, 10)).toBe(1);
-    expect(categoryBonusPoints(15, 3)).toBe(1);
-    expect(categoryBonusPoints(27, 10)).toBe(2);
-    expect(categoryBonusPoints(9, 0)).toBe(0);
+    expect(categoryBonusPoints('comum', 1)).toBe(1);
+    expect(categoryBonusPoints('comum', 10)).toBe(1);
+    expect(categoryBonusPoints('incomum', 3)).toBe(1);
+    expect(categoryBonusPoints('epica', 10)).toBe(2);
+    expect(categoryBonusPoints('comum', 0)).toBe(0);
+  });
+
+  it('toda carta gerada passa na validação de baralho do motor (poder ≤ teto da raridade)', () => {
+    for (let seed = 1; seed <= 3000; seed++) {
+      const g = generateCard({ seed, category: cavalo });
+      const card = { id: String(seed), name: g.name, element: g.element, rarity: g.rarity, attack: g.attack, health: g.health };
+      const problems = validateDeck([card], { ...DEFAULT_RULES, deckSize: 1, deckPowerLimit: 999 });
+      expect(problems).toEqual([]);
+    }
   });
 });

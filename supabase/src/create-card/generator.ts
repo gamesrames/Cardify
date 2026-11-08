@@ -1,4 +1,4 @@
-import { DEFAULT_RULES, Rng, RARITIES } from '../motor';
+import { DEFAULT_RULES, Rng, RARITIES, photoBonusCap } from '../motor';
 import type { Rarity, Rules } from '../motor';
 import type { Category, GeneratedCard } from './types';
 
@@ -15,7 +15,7 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = {
   lendaria: 1,
 };
 
-/** Teto do bônus de categoria, em % do orçamento da raridade (decisão do usuário). */
+/** Teto do `bonus_pct` guardado em `categories` (a regra de verdade é `photoBonusCap` do motor). */
 export const MAX_CATEGORY_BONUS_PCT = 10;
 
 /**
@@ -35,15 +35,16 @@ export function rollRarity(rng: Rng): Rarity {
 }
 
 /**
- * Pontos de poder extras que a categoria dá: 10% do orçamento no máximo, arredondado
- * para baixo, mas **no mínimo +1** quando a categoria tem algum bônus. Sem o mínimo,
- * a comum (orçamento 9) nunca ganharia nada. Por isso, só na comum, +1 passa de 10%
- * (decisão do usuário, 2026-11-08).
+ * Pontos de poder extras que a categoria dá: `bonus_pct`% do orçamento, arredondado para
+ * baixo, **no mínimo +1** quando a categoria tem algum bônus (senão a comum, orçamento 9,
+ * nunca ganharia nada) e **no máximo `photoBonusCap` do motor** (a regra de validação de
+ * baralho: comum 1, incomum 1, rara 1, épica 2, lendária 2). Decisão do usuário, 2026-11-08.
  */
-export function categoryBonusPoints(budget: number, bonusPct: number): number {
+export function categoryBonusPoints(rarity: Rarity, bonusPct: number, rules: Rules = DEFAULT_RULES): number {
   const pct = Math.min(Math.max(bonusPct, 0), MAX_CATEGORY_BONUS_PCT);
   if (pct === 0) return 0;
-  return Math.max(1, Math.floor((budget * pct) / 100));
+  const raw = Math.max(1, Math.floor((rules.powerBudget[rarity] * pct) / 100));
+  return Math.min(raw, photoBonusCap(rarity, rules));
 }
 
 /**
@@ -57,7 +58,7 @@ export function generateCard(
   const rng = new Rng(input.seed);
   const rarity = rollRarity(rng);
   const budget = rules.powerBudget[rarity];
-  const bonusPoints = categoryBonusPoints(budget, input.category.bonusPct);
+  const bonusPoints = categoryBonusPoints(rarity, input.category.bonusPct, rules);
   const total = budget + bonusPoints;
 
   const share = ATTACK_SHARE.min + rng.next() * (ATTACK_SHARE.max - ATTACK_SHARE.min);

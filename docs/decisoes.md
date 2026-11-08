@@ -48,9 +48,16 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Gerador de cartas: raridade 60/25/10/4/1, ataque/vida dividem o poder (orçamento + bônus da categoria) com 30% a 75% em ataque. Bônus arredonda para baixo (teto 10%), com mínimo de +1 ponto quando a categoria tem bônus (a comum passa de 10%). Aprovado pelo usuário. | Regras do usuário; a fatia de ataque cobre o intervalo das cartas fixas sem extremos. | Geração de cartas |
 | O servidor é empacotado com esbuild (`supabase/build.mjs`) em vez de alterar o motor para o Deno. | O motor não muda de contrato; o bundle sai de `src/`. | Backend |
 
+## 2026-11-08 (bônus de foto na validação)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Bônus de categoria da foto: até +10% do orçamento da raridade, arredondado para baixo, com **mínimo de +1** quando a categoria tem bônus (comum +1, incomum +1, rara +1, épica +2, lendária +2). Aprovado pelo usuário em 2026-11-08. | Sem o mínimo, o bônus de 10% sobre 9 de poder (comum) valeria 0 e a foto não faria diferença nas comuns. | Game design |
+| `validateDeck` compara o poder de cada carta com o teto = orçamento + bônus de foto + melhoria (25%, planejada): comum 12, incomum 19, rara 23, épica 35, lendária 37. O limite de 110 do baralho conta o poder real. Substitui "poder da carta ≤ orçamento da raridade". | Antes, qualquer carta com bônus (poder acima do orçamento) seria recusada em todo baralho. | Motor |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
-- Tamanho final do bônus de categoria e do teto de melhoria por raridade.
-- Limiar do hash perceptual com fotos reais; `validateDeck` com cartas que têm bônus.
+- Teto final de melhoria por raridade (hoje 25% do orçamento, só reservado na validação) e a lista final de categorias com seus bônus.
+- Limiar do hash perceptual com fotos reais de celular.
 - Bibliotecas de navegação e de estado do app.

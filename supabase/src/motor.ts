@@ -3,5 +3,5 @@
 // gerador de cartas usa. O build (build.mjs) empacota o motor junto com a
 // função, porque o Deno das Edge Functions não aceita os imports sem extensão
 // do motor.
-export { DEFAULT_RULES, Rng, RARITIES, ELEMENTS, cardPower } from '../../engine/src';
+export { DEFAULT_RULES, Rng, RARITIES, ELEMENTS, cardPower, maxCardPower, photoBonusCap } from '../../engine/src';
 export type { CardDef, Element, Rarity, Rules } from '../../engine/src';
