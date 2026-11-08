@@ -14,7 +14,7 @@ export const DEFAULT_RULES: Rules = {
   advantageMultiplier: 1.5,
   disadvantageMultiplier: 0.75,
   energyCost: { comum: 1, incomum: 2, rara: 2, epica: 3, lendaria: 3 },
-  powerBudget: { comum: 9, incomum: 15, rara: 18, epica: 24, lendaria: 28 },
+  powerBudget: { comum: 9, incomum: 15, rara: 18, epica: 27, lendaria: 28 },
 };
 
 /** Ciclo de vantagens: cada elemento vence o próximo. */
