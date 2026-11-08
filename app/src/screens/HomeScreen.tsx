@@ -6,6 +6,7 @@ import { colors, ELEMENT_INFO } from '../theme';
 interface Props {
   onPlay: () => void;
   onCreateCard: () => void;
+  onMyDeck: () => void;
 }
 
 /** Ciclo de vantagens montado a partir do motor (nada de regra copiada aqui). */
@@ -18,7 +19,7 @@ function advantageCycle(): string {
   return parts.join('  ·  ');
 }
 
-export function HomeScreen({ onPlay, onCreateCard }: Props) {
+export function HomeScreen({ onPlay, onCreateCard, onMyDeck }: Props) {
   const r = DEFAULT_RULES;
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -38,6 +39,7 @@ export function HomeScreen({ onPlay, onCreateCard }: Props) {
       </View>
 
       <Button label="Jogar contra o bot" onPress={onPlay} />
+      <Button label="Meu baralho (com as suas fotos)" variant="secondary" onPress={onMyDeck} />
       <Button label="Criar carta com uma foto" variant="secondary" onPress={onCreateCard} />
     </ScrollView>
   );

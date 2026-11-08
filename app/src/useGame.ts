@@ -3,6 +3,7 @@ import { applyAction, createGame, getCards, greedyBot, PREBUILT_DECKS } from './
 import type { Action, GameState, PlayerIndex } from './motor';
 import { describeEvents } from './describeEvent';
 import type { LogLine } from './describeEvent';
+import { getCustomDeck } from './customDeck';
 
 /** O humano é sempre o jogador 0 e o bot o jogador 1. Quem COMEÇA é sorteado pelo motor. */
 export const HUMAN: PlayerIndex = 0;
@@ -17,6 +18,8 @@ interface Game {
 }
 
 function deckCards(name: string) {
+  const custom = getCustomDeck(name);
+  if (custom) return [...custom];
   const ids = PREBUILT_DECKS[name];
   if (!ids) throw new Error(`Baralho pronto desconhecido: ${name}`);
   return getCards(ids);
