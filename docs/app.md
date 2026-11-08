@@ -12,7 +12,8 @@ Fora desta entrega (planejado): coleção de cartas, montar baralho próprio de 
 
 Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API (`npm test` em `app/`) e empacotamento do Metro para Android. **Ainda não testada em aparelho** nem chamada contra o servidor real.
 
-- Início → "Criar carta com uma foto" → câmera do app (`expo-camera`, funciona no Expo Go) → foto reduzida a 1280 px e regravada como JPEG (some o EXIF; `expo-image-manipulator`) → com o classificador manual, escolher a categoria numa lista → envio à função `create-card` → carta aparece com o `CardView`.
+- Início → "Criar carta com uma foto" → câmera do app (`expo-camera`, funciona no Expo Go) → foto reduzida a 1280 px e regravada como JPEG (some o EXIF; `expo-image-manipulator`) → com o classificador manual, escolher a categoria numa lista → envio à função `create-card` → a carta aparece com o `CardView`, **com a foto dentro** (`photoUri`).
+- A foto da carta recém-criada vem do próprio aparelho (data URI). Para cartas antigas (coleção, fase 2/3) será preciso URL assinada do Storage: o bucket `card-photos` é privado e o dono já tem policy de leitura em `supabase/migrations/20261108000002_fotos_storage.sql`.
 - Login anônimo automático (`supabase.auth.signInAnonymously`), sessão guardada no aparelho (AsyncStorage). Sem sessão guardada (app reinstalado), vira outro usuário anônimo: as cartas antigas ficam no servidor, mas não voltam (a fase 3 resolve com login de verdade).
 - Erros do servidor mostram a mensagem em português (cota do dia, foto repetida...). Falhas de rede e do reconhecimento têm "Tentar de novo".
 - Arquivos: `src/cardApi.ts` (chamada HTTP, sem React Native, testável), `src/supabase.ts` (cliente e sessão), `src/photo.ts` (reduzir/regravar), `src/screens/CreateCardScreen.tsx`.

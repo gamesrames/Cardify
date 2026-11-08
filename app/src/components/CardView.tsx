@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DEFAULT_RULES, energyCostOf } from '../motor';
 import type { CardDef } from '../motor';
 import { CARD_ASPECT } from '../layout';
@@ -12,11 +12,13 @@ interface Props {
   health?: number;
   selected?: boolean;
   dimmed?: boolean;
+  /** Foto da carta (cartas criadas na fase 2). Sem ela, as cartas fixas ficam só com o emoji do elemento. */
+  photoUri?: string;
   onPress?: () => void;
 }
 
 /** Desenha uma carta. Só mostra dados; nenhuma regra mora aqui. */
-export function CardView({ card, width, health, selected = false, dimmed = false, onPress }: Props) {
+export function CardView({ card, width, health, selected = false, dimmed = false, photoUri, onPress }: Props) {
   const element = ELEMENT_INFO[card.element];
   const rarity = RARITY_INFO[card.rarity];
   const currentHealth = health ?? card.health;
@@ -43,6 +45,7 @@ export function CardView({ card, width, health, selected = false, dimmed = false
       <Text style={[styles.rarity, { color: rarity.color }]} numberOfLines={1}>
         {rarity.label}
       </Text>
+      {photoUri && <Image source={{ uri: photoUri }} style={styles.art} resizeMode="cover" />}
       <View style={styles.stats}>
         <Text style={styles.stat}>⚔️ {card.attack}</Text>
         <Text style={[styles.stat, damaged && { color: colors.bad }]}>❤️ {currentHealth}</Text>
@@ -70,6 +73,7 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 26 },
   name: { color: colors.text, fontSize: 13, fontWeight: '700', textAlign: 'center', marginTop: 4, paddingHorizontal: 2 },
   rarity: { fontSize: 10, textAlign: 'center', fontWeight: '600' },
+  art: { flex: 1, marginHorizontal: 4, marginTop: 4, borderRadius: 6, backgroundColor: colors.panelAlt },
   stats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 'auto', paddingBottom: 6 },
   stat: { color: colors.text, fontSize: 13, fontWeight: '700' },
 });
