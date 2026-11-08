@@ -215,7 +215,8 @@ function rollRarity(rng) {
 }
 function categoryBonusPoints(budget, bonusPct) {
   const pct = Math.min(Math.max(bonusPct, 0), MAX_CATEGORY_BONUS_PCT);
-  return Math.floor(budget * pct / 100);
+  if (pct === 0) return 0;
+  return Math.max(1, Math.floor(budget * pct / 100));
 }
 function generateCard(input, rules = DEFAULT_RULES) {
   const rng = new Rng(input.seed);

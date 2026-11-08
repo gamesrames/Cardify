@@ -34,10 +34,16 @@ export function rollRarity(rng: Rng): Rarity {
   return 'comum'; // só por segurança contra arredondamento
 }
 
-/** Pontos de poder extras que a categoria dá. Arredonda para baixo: o teto de 10% nunca é passado. */
+/**
+ * Pontos de poder extras que a categoria dá: 10% do orçamento no máximo, arredondado
+ * para baixo, mas **no mínimo +1** quando a categoria tem algum bônus. Sem o mínimo,
+ * a comum (orçamento 9) nunca ganharia nada. Por isso, só na comum, +1 passa de 10%
+ * (decisão do usuário, 2026-11-08).
+ */
 export function categoryBonusPoints(budget: number, bonusPct: number): number {
   const pct = Math.min(Math.max(bonusPct, 0), MAX_CATEGORY_BONUS_PCT);
-  return Math.floor((budget * pct) / 100);
+  if (pct === 0) return 0;
+  return Math.max(1, Math.floor((budget * pct) / 100));
 }
 
 /**

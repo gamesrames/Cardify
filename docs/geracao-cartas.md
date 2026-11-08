@@ -32,7 +32,7 @@ Fase 2 em diante. Dono: thread de geração de cartas (junto com backend no come
 Função pura: mesma semente e categoria dão a mesma carta. Usa `DEFAULT_RULES` e o `Rng` do motor; não copia regra.
 
 - Raridade: pesos 60/25/10/4/1 (`RARITY_WEIGHTS`).
-- Poder total = orçamento da raridade + bônus da categoria. Bônus = `floor(orçamento × bonus_pct / 100)`, com `bonus_pct` entre 0 e 10 (a tabela `categories` guarda o valor; o gerador também limita).
+- Poder total = orçamento da raridade + bônus da categoria. Bônus = `floor(orçamento × bonus_pct / 100)`, com `bonus_pct` entre 0 e 10 (a tabela `categories` guarda o valor; o gerador também limita), e **no mínimo +1 ponto** quando `bonus_pct` > 0. Só a comum passa de 10% por causa do mínimo (aprovado pelo usuário em 2026-11-08).
 - Ataque/vida: a fatia do poder gasta em ataque sorteia entre 30% e 75% (`ATTACK_SHARE`); ataque e vida mínimos de 1; gasta o poder total exatamente.
 - Elemento e nome vêm da categoria. A foto não define mais nada.
 
@@ -67,7 +67,7 @@ As lojas e a LGPD exigem, antes de qualquer lançamento aberto:
 ## A definir
 
 - Limiar do hash com fotos reais (hoje 10 de 64 bits) e se fotos de tela/foto da foto passam.
-- **Bônus de categoria quase invisível:** como o bônus arredonda para baixo e o teto é 10%, **comum (orçamento 9) nunca ganha ponto**, incomum/rara ganham 1 (com 7%+), épica/lendária até 2. Como 60% das cartas são comuns, a categoria quase não pesa. Opções para o usuário: subir o teto para ~15%, ou dar no mínimo +1 ponto a categorias com bônus. Não mudei, pois o teto é decisão do usuário.
+- Bônus de categoria: resolvido com o mínimo de +1 (ver acima); conferir no simulador se a comum com +1 (10 de poder) desequilibra.
 - **Pendência para a thread do motor:** `validateDeck` rejeita carta acima do orçamento da raridade, mas cartas com bônus passam disso (poder = orçamento + bônus). Precisa aceitar `orçamento + floor(orçamento × 10%)` (ou a carta carregar o próprio orçamento). Sem isso, carta de foto com bônus não entra em baralho.
 - Balanceamento das cartas geradas: rodar o simulador com cartas geradas (ataque/vida sorteados, raridades 60/25/10/4/1) para ver se alguma combinação passa de 60% de vitória. Ainda não feito.
 - Lista final de categorias e bônus (a inicial tem 25, em `supabase/migrations/`, ajustável por `UPDATE`).

@@ -11,12 +11,12 @@ describe('gerador de cartas', () => {
     expect(generateCard({ seed: 12345, category: cavalo })).toEqual(generateCard({ seed: 12345, category: cavalo }));
   });
 
-  it('gasta exatamente orçamento + bônus e respeita o teto de 10%', () => {
+  it('gasta exatamente orçamento + bônus; bônus é 10% do orçamento (mínimo +1)', () => {
     for (let seed = 1; seed <= 5000; seed++) {
       const card = generateCard({ seed, category: cavalo });
       const budget = DEFAULT_RULES.powerBudget[card.rarity];
       expect(cardPower(card)).toBe(budget + card.bonusPoints);
-      expect(card.bonusPoints).toBeLessThanOrEqual(Math.floor(budget * 0.1));
+      expect(card.bonusPoints).toBe(Math.max(1, Math.floor(budget * 0.1)));
       expect(card.attack).toBeGreaterThanOrEqual(1);
       expect(card.health).toBeGreaterThanOrEqual(1);
     }
@@ -57,5 +57,13 @@ describe('gerador de cartas', () => {
   it('bônus de categoria nunca passa de 10% mesmo com valor absurdo', () => {
     expect(categoryBonusPoints(28, 500)).toBe(Math.floor((28 * MAX_CATEGORY_BONUS_PCT) / 100));
     expect(categoryBonusPoints(28, -5)).toBe(0);
+  });
+
+  it('categoria com algum bônus dá no mínimo +1, até na comum; sem bônus dá 0', () => {
+    expect(categoryBonusPoints(9, 1)).toBe(1);
+    expect(categoryBonusPoints(9, 10)).toBe(1);
+    expect(categoryBonusPoints(15, 3)).toBe(1);
+    expect(categoryBonusPoints(27, 10)).toBe(2);
+    expect(categoryBonusPoints(9, 0)).toBe(0);
   });
 });
