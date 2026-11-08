@@ -4,7 +4,7 @@ Pasta: `engine/`. Dono: thread de motor/balanceamento. Regras e fórmulas ficam 
 
 ## Estado atual
 
-Implementado e aberto como **PR #1** (branch `fase-1-motor-de-combate`, ainda não está no `main`): motor, 30 cartas, validação de baralho, 5 baralhos prontos, bot guloso, bot aleatório, simulador e 14 testes (vitest). Os caminhos abaixo existem depois que o PR entrar.
+Implementado e aberto como **PR #1** (branch `fase-1-motor-de-combate`, ainda não está no `main`): motor, 30 cartas, validação de baralho, 5 baralhos prontos, bot guloso, bot aleatório, simulador e 14 testes (vitest). O PR já inclui a primeira rodada de balanceamento: orçamento da épica em 27 e ataque/vida de 9 cartas redistribuídos (detalhes em `game-design.md`). O segundo jogador recebe +2 de energia no primeiro turno (`secondPlayerBonusEnergy`). Os caminhos abaixo existem depois que o PR entrar.
 
 ## Princípios
 

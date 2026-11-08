@@ -4,7 +4,7 @@ Dono: thread de motor/balanceamento. Valores aqui são a referência; o código 
 
 ## Estado atual
 
-Fórmulas v0 aprovadas pelo usuário em 2026-11-08 e implementadas no motor (PR #1). Valores ainda **provisórios**: o simulador existe para ajustá-los. Problema aberto: a fórmula de poder barateia a vida (ver "Balanceamento em aberto").
+Fórmulas v0 aprovadas pelo usuário em 2026-11-08 e implementadas no motor (PR #1). Depois da primeira rodada de balanceamento, o orçamento da raridade **épica subiu de 24 para 27** e 9 cartas tiveram ataque/vida redistribuídos (ver "Balanceamento"). Valores ainda **provisórios**: o simulador existe para ajustá-los.
 
 ## Regras da partida
 
@@ -34,7 +34,7 @@ Fogo > Planta > Terra > Ar > Água > Fogo
 | Comum | 1 | 9 |
 | Incomum | 2 | 15 |
 | Rara | 2 | 18 |
-| Épica | 3 | 24 |
+| Épica | 3 | 27 |
 | Lendária | 3 | 28 |
 
 - **Limite de poder do baralho: 110** (soma dos poderes das 7 cartas).
@@ -44,15 +44,18 @@ Fogo > Planta > Terra > Ar > Água > Fogo
 
 ## Cartas fixas da fase 1
 
-30 cartas, 6 por elemento (2 comuns, 1 incomum, 1 rara, 1 épica, 1 lendária), cada uma gastando exatamente o orçamento da sua raridade. A lista completa e os baralhos prontos do bot estão em `engine/src/cards.ts` e `engine/src/deck.ts`; não duplique a tabela aqui.
+30 cartas, 6 por elemento (2 comuns, 1 incomum, 1 rara, 1 épica, 1 lendária), cada uma gastando exatamente o orçamento da sua raridade (épicas: 27). A lista completa e os baralhos prontos do bot estão em `engine/src/cards.ts` e `engine/src/deck.ts`; não duplique a tabela aqui.
 
-## Balanceamento em aberto
+## Balanceamento
 
-Achados do simulador (10 mil partidas, PR #1):
+Primeira rodada (PR #1, simulador com 20 mil partidas, bot guloso contra bot guloso):
 
-- Ent (planta, lendária) vence **60,6%** e Águia (ar, épica) vence **38,3%**, fora da faixa-alvo de 40% a 60%.
-- Causa provável: Poder = 2×Ataque + Vida barateia a vida; cartas "gordas" rendem mais que o poder indica, e as épicas de ataque alto rendem menos.
-- Próximo passo: ajustar a fórmula de poder (ou os pesos) e as cartas, e rodar o simulador de novo. Critério de aceite da fase 1: nenhuma carta passa de 60% nos baralhos em que aparece.
+- **Antes:** Ent (planta, lendária) vencia 60,6% e Águia (ar, épica) 38,3%, fora da faixa-alvo de 40% a 60%. Causa: Poder = 2×Ataque + Vida barateia a vida, e as épicas rendiam menos que o poder indica (média de 44,7%).
+- **Redistribuição de ataque/vida** (mesmo poder): Ent 9/10, Baleia 9/10, Condor 10/8, Águia 10/7, Foca 5/8 e Elefante 7/13. Resultado: pior carta a 9 pontos de 50% (antes 11,7), nenhuma fora de 40% a 60%.
+- **Orçamento da épica de 24 para 27**, o que também mudou Leão (9/9), Urso (8/11) e Tubarão (9/9). Resultado: épicas de 44,7% para 48,4%; pior carta a 6,3 pontos de 50%; todas as raridades entre 48% e 53%.
+- Segundo jogador com +2 de energia no primeiro turno: vitória de quem começa em ~51%.
+
+Em aberto: confirmar com o usuário o orçamento da épica em 27 (a decisão original era 24) e rodar o simulador de novo se alguma regra mudar. Critério de aceite da fase 1: nenhuma carta passa de 60% nos baralhos em que aparece.
 
 ## Como propor mudança de regra
 

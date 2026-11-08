@@ -21,9 +21,16 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Todas as threads de trabalho usam Sonnet (`claude-sonnet-5-5`) com esforço alto; só o coordenador usa Opus. | Regra do usuário para o projeto. | Processo |
 | Docs de contexto por área em `docs/`, mais `CLAUDE.md` na raiz; threads leem os da sua área e os atualizam ao mudar uma decisão. | Cada agente lê só o que precisa. | Processo |
 
+## 2026-11-08 (balanceamento do PR #1)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Orçamento de poder da raridade épica sobe de 24 para 27 (revoga o 24 das fórmulas v0). Demais raridades inalteradas. | Simulador (20 mil partidas): épicas de 44,7% para 48,4% de vitória; todas as raridades entre 48% e 53%. Pendente de confirmação do usuário. | Game design / Motor |
+| Ataque e vida de 9 cartas redistribuídos, sem mudar o poder da raridade: Ent 9/10, Baleia 9/10, Condor 10/8, Águia 10/7, Foca 5/8, Elefante 7/13; e, pela mudança da épica, Leão 9/9, Urso 8/11, Tubarão 9/9. | Tirar Ent (60,6%) e Águia (38,3%) da zona fora de 40% a 60%. | Motor |
+
 ## Em aberto
 
-- Ajuste da fórmula de poder: vida está barateada; Ent (60,6%) e Águia (38,3%) saíram da faixa de 40% a 60% no simulador (ver `game-design.md`).
+- Confirmar com o usuário o orçamento da épica em 27 e se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
 - Tamanho final do bônus de categoria e do teto de melhoria por raridade.
 - Biblioteca de classificação de foto no celular.
 - Bibliotecas de navegação e de estado do app.
