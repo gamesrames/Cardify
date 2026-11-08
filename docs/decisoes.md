@@ -46,6 +46,7 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Cota diária por dia de São Paulo, lida de `app_config` (14 agora, 3 no final); cota e duplicata são conferidas dentro da transação de gravação. | Servidor decide; duas fotos simultâneas não furam o limite. | Backend |
 | O servidor recodifica o JPEG antes de guardar (some o EXIF). | Não depender do app para privacidade. | Geração de cartas |
 | Gerador de cartas: raridade 60/25/10/4/1, ataque/vida dividem o poder (orçamento + bônus da categoria) com 30% a 75% em ataque. Bônus arredonda para baixo (teto 10%), com mínimo de +1 ponto quando a categoria tem bônus (a comum passa de 10%). Aprovado pelo usuário. | Regras do usuário; a fatia de ataque cobre o intervalo das cartas fixas sem extremos. | Geração de cartas |
+| Câmera do app com `expo-camera` e `expo-image-manipulator` (funcionam no Expo Go); sem development build na fase 2. Login anônimo com sessão em AsyncStorage. Revoga "classificação no celular exige dev build" de `app.md`. | Classificar no servidor torna o build nativo desnecessário. | App |
 | O servidor é empacotado com esbuild (`supabase/build.mjs`) em vez de alterar o motor para o Deno. | O motor não muda de contrato; o bundle sai de `src/`. | Backend |
 
 ## 2026-11-08 (bônus de foto na validação)
