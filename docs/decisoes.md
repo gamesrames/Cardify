@@ -36,9 +36,21 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Fase 1 sem biblioteca de navegação nem de estado: um `useState` escolhe a tela e um hook (`useGame`) guarda o `GameState`. Reavaliar na fase 2 (câmera, coleção). | São 3 telas; biblioteca seria peso sem ganho. | App |
 | Na fase 1 o humano é sempre o jogador 0 e o bot o jogador 1; o bot usa `greedyBot` e joga com um baralho pronto sorteado, diferente do escolhido. A semente é sorteada na camada de tela (`Math.random` só fora do motor). | Escopo mínimo jogável; a semente fica visível no fim da partida para reproduzir. | App |
 
+## 2026-11-08 (fase 2: foto vira carta)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| A foto é identificada **no servidor**, atrás da interface `Classifier`: `ManualClassifier` (testes e plano B) e `GeminiClassifier` (plano grátis do Gemini). Revoga a ideia de classificar no celular (proposta em `geracao-cartas.md`). | Funciona no Expo Go do iPhone (dev build exigiria conta Apple paga), é testável no computador e a lista de categorias é nossa. | Geração de cartas |
+| A chave do Gemini vive só em segredo do Supabase (`GEMINI_API_KEY`); nunca em código, commit, docs ou mensagens. | Segurança; a chave foi criada pelo usuário. | Backend |
+| Hash perceptual dHash de 64 bits, calculado no servidor; duplicata = distância ≤ 10, vale entre todos os jogadores. Limiar a validar com fotos reais. | Amigos não devem repetir a mesma foto; ajustável em `app_config` sem deploy. | Geração de cartas |
+| Cota diária por dia de São Paulo, lida de `app_config` (14 agora, 3 no final); cota e duplicata são conferidas dentro da transação de gravação. | Servidor decide; duas fotos simultâneas não furam o limite. | Backend |
+| O servidor recodifica o JPEG antes de guardar (some o EXIF). | Não depender do app para privacidade. | Geração de cartas |
+| Gerador de cartas: raridade 60/25/10/4/1, ataque/vida dividem o poder (orçamento + bônus da categoria) com 30% a 75% em ataque. Bônus arredonda para baixo (teto 10%). | Regras do usuário; a fatia de ataque cobre o intervalo das cartas fixas sem extremos. | Geração de cartas |
+| O servidor é empacotado com esbuild (`supabase/build.mjs`) em vez de alterar o motor para o Deno. | O motor não muda de contrato; o bundle sai de `src/`. | Backend |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
 - Tamanho final do bônus de categoria e do teto de melhoria por raridade.
-- Biblioteca de classificação de foto no celular.
+- Limiar do hash perceptual com fotos reais; bônus de categoria que quase não aparece em comuns (ver `geracao-cartas.md`); `validateDeck` com cartas que têm bônus.
 - Bibliotecas de navegação e de estado do app.
