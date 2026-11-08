@@ -28,6 +28,14 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Orçamento de poder da raridade épica sobe de 24 para 27 (revoga o 24 das fórmulas v0). Demais raridades inalteradas. | Simulador (20 mil partidas): épicas de 44,7% para 48,4% de vitória; todas as raridades entre 48% e 53%. Aprovado pelo usuário em 2026-11-08. | Game design / Motor |
 | Ataque e vida de 9 cartas redistribuídos, sem mudar o poder da raridade: Ent 9/10, Baleia 9/10, Condor 10/8, Águia 10/7, Foca 5/8, Elefante 7/13; e, pela mudança da épica, Leão 9/9, Urso 8/11, Tubarão 9/9. | Tirar Ent (60,6%) e Águia (38,3%) da zona fora de 40% a 60%. | Motor |
 
+## 2026-11-08 (app da fase 1)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| O app (`app/`) usa Expo SDK 58 e importa o motor por caminho relativo (`../../engine/src`), concentrado em `app/src/motor.ts`; o `metro.config.js` libera a leitura de `engine/`. Sem copiar nem publicar o motor como pacote. | Motor único para app e servidor, sem etapa de build extra. Se o contrato mudar, só `motor.ts` precisa de revisão. | App |
+| Fase 1 sem biblioteca de navegação nem de estado: um `useState` escolhe a tela e um hook (`useGame`) guarda o `GameState`. Reavaliar na fase 2 (câmera, coleção). | São 3 telas; biblioteca seria peso sem ganho. | App |
+| Na fase 1 o humano é sempre o jogador 0 e o bot o jogador 1; o bot usa `greedyBot` e joga com um baralho pronto sorteado, diferente do escolhido. A semente é sorteada na camada de tela (`Math.random` só fora do motor). | Escopo mínimo jogável; a semente fica visível no fim da partida para reproduzir. | App |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
