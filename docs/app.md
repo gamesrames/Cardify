@@ -17,7 +17,7 @@ Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API 
 - Erros do servidor mostram a mensagem em português (cota do dia, foto repetida...). Falhas de rede e do reconhecimento têm "Tentar de novo".
 - Arquivos: `src/cardApi.ts` (chamada HTTP, sem React Native, testável), `src/supabase.ts` (cliente e sessão), `src/photo.ts` (reduzir/regravar), `src/screens/CreateCardScreen.tsx`.
 - Configuração: copie `app/.env.example` para `app/.env.local` e preencha a URL e a chave pública (publishable) do projeto (Supabase → Project Settings → API). `EXPO_PUBLIC_MANUAL_CATEGORY=true` mostra a lista de categorias; use `false` quando o Gemini estiver ligado no servidor. Depois de mudar o `.env.local`, rode `npx expo start -c`.
-- No navegador (`w` no Expo), aparece um botão extra para escolher um arquivo, só para testar no computador sem câmera.
+- No navegador (`w` no Expo; já inclui `react-dom` e `react-native-web`), aparece um botão extra para escolher um arquivo, só para testar no computador sem câmera. Empacotamento web verificado (`expo export --platform web`).
 
 ### Como testar a criação de carta
 
