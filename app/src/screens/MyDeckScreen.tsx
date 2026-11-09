@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Button } from '../components/Button';
 import { CardView } from '../components/CardView';
-import { loadDeckIds, saveDeckIds } from '../deckStorage';
+import { clearLegacyDeckIds, loadDeckIds, loadLegacyDeckIds, saveDeckIds } from '../deckStorage';
+import { createSaveQueue, resolveDeck } from '../deckSync';
+import type { SyncState } from '../deckSync';
 import { buildPool, deckFromIds, deckStatus, toggleId } from '../myCards';
 import type { CardRow } from '../myCards';
 import { CARDS, DEFAULT_RULES } from '../motor';
 import type { CardDef } from '../motor';
-import { isSupabaseConfigured, listMyCards, signedPhotoUrls } from '../supabase';
+import { fetchCloudDeck, isSupabaseConfigured, listMyCards, saveCloudDeck, signedPhotoUrls } from '../supabase';
 import { MAX_APP_WIDTH } from '../layout';
 import { colors } from '../theme';
 
@@ -15,17 +17,25 @@ const LIST_PADDING = 16;
 const GRID_GAP = 8;
 
 interface Props {
+  /** Jogador logado (`null` só no modo offline, sem servidor). */
+  userId: string | null;
+  /** Convidado: o baralho vai para a nuvem, mas só volta em outro aparelho depois de criar a conta. */
+  isGuest: boolean;
   /** `photos` é `id da carta → endereço da foto`, para a partida desenhar as fotos. */
   onPlay: (deck: CardDef[], photos: Record<string, string>) => void;
   onBack: () => void;
 }
 
-export function MyDeckScreen({ onPlay, onBack }: Props) {
+export function MyDeckScreen({ userId, isGuest, onPlay, onBack }: Props) {
+  const localKey = userId ?? 'offline';
   const [rows, setRows] = useState<CardRow[]>([]);
   const [photoById, setPhotoById] = useState<Record<string, string>>({});
   const [ids, setIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [sync, setSync] = useState<SyncState>('idle');
+  // Fila de gravação na nuvem: uma de cada vez, só a versão mais nova (veja deckSync.ts).
+  const queue = useRef(createSaveQueue(saveCloudDeck, setSync));
   const { width: windowWidth } = useWindowDimensions();
   // 3 cartas por linha, no máximo na largura do app (em janela larga fica centralizado, como no celular).
   const cardWidth = Math.floor((Math.min(windowWidth, MAX_APP_WIDTH) - 2 * LIST_PADDING - 2 * GRID_GAP) / 3);
@@ -33,11 +43,20 @@ export function MyDeckScreen({ onPlay, onBack }: Props) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const savedIds = await loadDeckIds();
+      const local = await loadDeckIds(localKey);
+      const legacy = await loadLegacyDeckIds();
+      let cloud: string[] | null = null;
+      let cloudReachable = false;
       let myRows: CardRow[] = [];
       let byId: Record<string, string> = {};
       try {
         if (isSupabaseConfigured) {
+          try {
+            cloud = await fetchCloudDeck();
+            cloudReachable = true;
+          } catch {
+            // sem rede: segue com o baralho guardado no aparelho e avisa no rodapé
+          }
           myRows = await listMyCards();
           const urls = await signedPhotoUrls(myRows.map((r) => r.photo_path));
           for (const r of myRows) {
@@ -50,15 +69,28 @@ export function MyDeckScreen({ onPlay, onBack }: Props) {
         if (!cancelled) setLoadError(e instanceof Error ? e.message : 'Não consegui carregar as suas cartas.');
       }
       if (cancelled) return;
+      // A nuvem manda; se ainda estiver vazia, o baralho do aparelho sobe (inclusive o da fase 2).
+      const resolved = resolveDeck({ local, legacy, cloud, cloudReachable });
       setRows(myRows);
       setPhotoById(byId);
-      setIds(savedIds);
+      setIds(resolved.ids);
+      setSync(isSupabaseConfigured && !cloudReachable ? 'offline' : 'idle');
       setLoading(false);
+      void saveDeckIds(localKey, resolved.ids); // cópia local para jogar sem internet
+      if (resolved.uploadToCloud) void queue.current.save(resolved.ids);
+      if (resolved.consumedLegacy) void clearLegacyDeckIds();
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [localKey]);
+
+  const syncNote =
+    sync === 'saving' ? 'Salvando na nuvem...'
+    : sync === 'offline' ? 'Sem conexão: o baralho está salvo só neste aparelho e sobe quando você mexer nele de novo.'
+    : sync === 'saved' && isGuest ? 'Salvo. Para ver este baralho em outro aparelho, crie uma conta em "Minha conta".'
+    : sync === 'saved' ? 'Salvo na nuvem.'
+    : null;
 
   const pool = useMemo(() => buildPool(rows), [rows]);
   const deck = useMemo(() => deckFromIds(pool, ids), [pool, ids]);
@@ -69,7 +101,8 @@ export function MyDeckScreen({ onPlay, onBack }: Props) {
   function toggle(id: string) {
     const next = toggleId(ids, id);
     setIds(next);
-    void saveDeckIds(next);
+    void saveDeckIds(localKey, next);
+    if (isSupabaseConfigured) void queue.current.save(next);
   }
 
   function renderCards(cards: CardDef[]) {
@@ -95,8 +128,9 @@ export function MyDeckScreen({ onPlay, onBack }: Props) {
         <Text style={styles.title}>Meu baralho</Text>
         <Text style={styles.hint}>
           Escolha {DEFAULT_RULES.deckSize} cartas. O poder total não pode passar de {DEFAULT_RULES.deckPowerLimit}. O
-          baralho fica salvo neste aparelho.
+          baralho é salvo na sua conta.
         </Text>
+        {syncNote && <Text style={sync === 'offline' ? styles.warn : styles.hint}>{syncNote}</Text>}
         {loading && <ActivityIndicator color={colors.accent} />}
         {loadError && <Text style={styles.warn}>{loadError} Só as cartas fixas estão disponíveis.</Text>}
 

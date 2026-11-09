@@ -21,7 +21,7 @@ const client = isSupabaseConfigured
     })
   : null;
 
-function requireClient() {
+export function requireClient() {
   if (!client) throw new Error('Supabase não configurado. Veja app/.env.example.');
   return client;
 }
@@ -38,6 +38,18 @@ export async function ensureSession(): Promise<Session> {
     );
   }
   return result.data.session;
+}
+
+/** Sessão guardada no aparelho, ou `null` se ninguém entrou ainda (não cria convidado sozinho). */
+export async function getStoredSession(): Promise<Session | null> {
+  if (!client) return null;
+  const { data } = await client.auth.getSession();
+  return data.session;
+}
+
+/** Entra como convidado (login anônimo): dá para jogar já e criar a conta depois, mantendo as cartas. */
+export async function startGuestSession(): Promise<Session> {
+  return ensureSession();
 }
 
 export interface CategoryOption {
@@ -77,4 +89,43 @@ export async function signedPhotoUrls(paths: readonly string[]): Promise<Record<
   const urls: Record<string, string> = {};
   for (const item of data ?? []) if (item.path && item.signedUrl) urls[item.path] = item.signedUrl;
   return urls;
+}
+
+// ---- Baralho e perfil na nuvem (fase 3) ----
+
+/** Nome do baralho do jogador; o servidor aceita vários por jogador (`unique (owner_id, name)`), o app usa um. */
+export const MY_DECK_NAME = 'Meu baralho';
+
+/** Ids do baralho na nuvem, ou `null` se o jogador ainda não salvou nenhum. Lança erro se não houver rede. */
+export async function fetchCloudDeck(): Promise<string[] | null> {
+  const supabase = requireClient();
+  await ensureSession();
+  const { data, error } = await supabase.from('decks').select('card_ids').eq('name', MY_DECK_NAME).maybeSingle();
+  if (error) throw new Error('Não consegui carregar o baralho da nuvem.');
+  return data ? (data.card_ids as string[]) : null;
+}
+
+/** Grava (ou atualiza) o baralho. A RLS do servidor só deixa gravar no nome do próprio jogador. */
+export async function saveCloudDeck(ids: readonly string[]): Promise<void> {
+  const supabase = requireClient();
+  const session = await ensureSession();
+  const { error } = await supabase
+    .from('decks')
+    .upsert({ owner_id: session.user.id, name: MY_DECK_NAME, card_ids: [...ids] }, { onConflict: 'owner_id,name' });
+  if (error) throw new Error('Não consegui salvar o baralho na nuvem.');
+}
+
+export async function fetchDisplayName(): Promise<string | null> {
+  const supabase = requireClient();
+  const session = await ensureSession();
+  const { data, error } = await supabase.from('profiles').select('display_name').eq('id', session.user.id).maybeSingle();
+  if (error) throw new Error('Não consegui carregar o seu perfil.');
+  return (data?.display_name as string | null | undefined) ?? null;
+}
+
+export async function saveDisplayName(name: string): Promise<void> {
+  const supabase = requireClient();
+  const session = await ensureSession();
+  const { error } = await supabase.from('profiles').update({ display_name: name.trim() }).eq('id', session.user.id);
+  if (error) throw new Error('Não consegui salvar o nome. Use de 2 a 20 letras.');
 }

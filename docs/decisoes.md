@@ -57,6 +57,16 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Bônus de categoria da foto: até +10% do orçamento da raridade, arredondado para baixo, com **mínimo de +1** quando a categoria tem bônus (comum +1, incomum +1, rara +1, épica +2, lendária +2). Aprovado pelo usuário em 2026-11-08. | Sem o mínimo, o bônus de 10% sobre 9 de poder (comum) valeria 0 e a foto não faria diferença nas comuns. | Game design |
 | `validateDeck` compara o poder de cada carta com o teto = orçamento + bônus de foto + melhoria (25%, planejada): comum 12, incomum 19, rara 23, épica 35, lendária 37. O limite de 110 do baralho conta o poder real. Substitui "poder da carta ≤ orçamento da raridade". | Antes, qualquer carta com bônus (poder acima do orçamento) seria recusada em todo baralho. | Motor |
 
+## 2026-11-09 (fase 3: contas e nuvem)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Convidado vira conta **ligando um e-mail ao mesmo usuário anônimo** (`updateUser({ email })`); o id do jogador não muda. | As cartas já criadas (dono = id do usuário anônimo) continuam dele sem migrar nada. | Backend / App |
+| Login por **e-mail + código de 6 dígitos**, sem senha e sem link; convidado (anônimo) continua existindo. Google fica para depois. **Proposta recomendada, aguardando confirmação do usuário.** | Funciona no Expo Go e no navegador sem deep link; serve também no lançamento. Adicionar senha ou Google depois é possível sobre o mesmo usuário. | Backend / App |
+| Exige SMTP próprio no Supabase (o e-mail embutido só envia a membros da organização). Grátis: Brevo (300/dia). A senha do SMTP só no painel. | Amigos não são membros da organização; sem SMTP não recebem o código. | Backend |
+| `profiles` (nome de exibição) e `decks` (`card_ids text[]`, único por dono e nome) com RLS por dono; o banco não valida a legalidade do baralho, o motor valida ao iniciar a partida (fase 4). | O servidor decide a regra, uma vez só, no lugar certo; a fase 4 não precisa de mudança de esquema. | Backend |
+| Quem entra numa conta existente deixa o convidado para trás (sem fundir cartas). | Fundir exige regras de cota diária e duplicatas; fica fora do protótipo. A tela avisa. | App |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).

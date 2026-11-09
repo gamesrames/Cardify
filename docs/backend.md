@@ -1,10 +1,12 @@
 # Backend (Supabase)
 
-Pasta: `supabase/`. Dono: thread de backend. Fase 2 em andamento.
+Pasta: `supabase/`. Dono: thread de backend. Fase 2 concluída; fase 3 (contas e nuvem) em andamento.
 
 ## Estado atual
 
-Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar com o classificador **manual** (`CLASSIFIER` não definido; nenhum segredo do Gemini salvo). **Ainda não foi chamada por HTTP** (o ambiente de desenvolvimento não alcança `supabase.co`) e o login anônimo precisa ser ligado pelo usuário no painel. Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
+Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar com o classificador **manual** (`CLASSIFIER` não definido; nenhum segredo do Gemini salvo). **Ainda não foi chamada por HTTP** (o ambiente de desenvolvimento não alcança `supabase.co`) e o login anônimo precisa ser ligado pelo usuário no painel. Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). 
+
+**Fase 3 (escrita e testada no computador, ainda sem PR):** migração `20261109000001_perfis_e_baralhos.sql` com `profiles` e `decks` (RLS por dono, 14 testes pelos papéis `authenticated` e `anon` em `test/contas.test.ts`). **A migração ainda não foi aplicada no projeto real** (a aplicação pelo MCP foi negada; veja "Como publicar a fase 3"). Não existem ainda: partidas (fase 4).
 
 ## Decidido
 
@@ -29,7 +31,22 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 - `cards`: dono, nome, `photo_path`, `photo_hash bit(64)`, categoria, elemento, raridade, ataque, vida, `seed`, `bonus_points`, data. O cliente só lê as próprias.
 - `photo_check(usuário, hash)` → `ok` | `quota_exceeded` | `duplicate`. Cota = cartas do dia em São Paulo.
 - `insert_card(...)`: lock por usuário, refaz `photo_check` e insere. Só a chave de serviço executa (revogado de `anon` e `authenticated`).
-- Rascunho para as próximas fases (não é decisão): `profiles`, `decks`/`deck_cards`, `matches`/`match_actions`.
+- Rascunho para a fase 4 (não é decisão): `matches`/`match_actions`.
+
+## Dados da fase 3 (implementado em `supabase/migrations/20261109000001_perfis_e_baralhos.sql`)
+
+- **O id do jogador é o id do login** (`auth.users.id`). Quando o convidado (login anônimo) cria a conta, o Supabase **mantém o mesmo id**: cartas, baralho e perfil continuam dele, sem migração. Quem entra numa conta que já existia deixa o convidado para trás (as cartas do convidado não são fundidas; a tela avisa).
+- `profiles(id, display_name, created_at, updated_at)`: criado por trigger em cada login novo (e para quem já existia). O cliente lê o próprio e edita só `display_name` (2 a 20 letras; `grant update (display_name)`). Na fase 4 uma policy nova deixa o adversário ler o nome durante a partida.
+- `decks(id, owner_id, name, card_ids text[], ...)`, `unique (owner_id, name)`: o app usa um baralho chamado "Meu baralho" (o esquema aceita vários). `card_ids` mistura ids de cartas fixas (texto do motor) e de foto (uuid). O dono faz CRUD só nos próprios (RLS). **O banco não valida se o baralho é legal** (7 cartas, teto de poder, posse das cartas): isso é do motor, no servidor, ao iniciar a partida (fase 4). Só há um limite de higiene de 20 ids.
+- Reforço nas tabelas da fase 2: tirada a permissão de escrita de `anon` e `authenticated` em `cards` e `categories`, e todo acesso a `app_config` (além da RLS).
+- Login: **e-mail + código de 6 dígitos** (sem senha, sem link) e convidado por login anônimo. Decisão e alternativas em `decisoes.md`.
+
+## Como publicar a fase 3 (passos do usuário no painel; o que for SQL pode ser aplicado por nós)
+
+1. **SMTP próprio** (Authentication → Emails → SMTP Settings). O e-mail embutido do Supabase só envia para membros da organização, então os amigos não receberiam o código. Opção grátis: Brevo (300 e-mails/dia). A senha do SMTP fica só no painel, nunca no repositório nem em mensagens.
+2. **Modelos de e-mail** (Authentication → Emails → Templates): em **Magic Link** e em **Change Email Address**, troque o link pelo código: `<h2>Seu código do Cardify</h2><p>Digite no app: <b>{{ .Token }}</b></p>`.
+3. Aplicar a migração `20261109000001_perfis_e_baralhos.sql` (SQL Editor do painel, ou pedir para a thread aplicar pelo MCP depois de liberar).
+4. Conferir **Allow anonymous sign-ins** ligado (já estava, da fase 2).
 
 ## Contrato da função `create-card` (app ↔ servidor)
 

@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PREBUILT_DECKS } from './src/motor';
 import type { CardDef } from './src/motor';
 import { CardPhotosProvider } from './src/cardPhotos';
 import { CUSTOM_DECK_NAME, setCustomDeck } from './src/customDeck';
+import { useAuth } from './src/useAuth';
+import { AccountScreen } from './src/screens/AccountScreen';
+import { WelcomeScreen } from './src/screens/WelcomeScreen';
 import { MyDeckScreen } from './src/screens/MyDeckScreen';
 import { CreateCardScreen } from './src/screens/CreateCardScreen';
 import { DeckPickScreen } from './src/screens/DeckPickScreen';
@@ -20,6 +23,7 @@ type Screen =
   | { name: 'decks' }
   | { name: 'create' }
   | { name: 'mydeck' }
+  | { name: 'account' }
   | { name: 'game'; playerDeck: string; botDeck: string; seed: number };
 
 /** A semente é sorteada AQUI (camada de tela). O motor em si nunca usa Math.random. */
@@ -37,6 +41,14 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
   // Fotos das cartas do jogador (id da carta → endereço), lidas pelo CardView via contexto.
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  const auth = useAuth();
+  const userId = auth.status === 'in' ? auth.user.id : null;
+
+  // Trocou de jogador (saiu, entrou em outra conta): volta ao menu e esquece as fotos do anterior.
+  useEffect(() => {
+    setPhotos({});
+    setScreen({ name: 'home' });
+  }, [userId]);
 
   function startGame(playerDeck: string) {
     setScreen({ name: 'game', playerDeck, botDeck: pickBotDeck(playerDeck), seed: newSeed() });
@@ -47,6 +59,20 @@ export default function App() {
     setPhotos(deckPhotos);
     startGame(CUSTOM_DECK_NAME);
   }
+
+  // Sem sessão: boas-vindas (entrar ou começar como convidado). Sem servidor configurado (modo offline da
+  // fase 1), `status` é 'off' e o app abre direto no menu.
+  if (auth.status === 'loading' || auth.status === 'out') {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <SafeAreaView style={styles.root}>
+          {auth.status === 'loading' ? <ActivityIndicator style={styles.loading} color={colors.accent} /> : <WelcomeScreen />}
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+  const user = auth.status === 'in' ? auth.user : null;
 
   return (
     <CardPhotosProvider value={photos}>
@@ -66,7 +92,11 @@ export default function App() {
           />
         ) : screen.name === 'mydeck' ? (
           <SafeAreaView style={styles.root}>
-            <MyDeckScreen onPlay={playMyDeck} onBack={() => setScreen({ name: 'home' })} />
+            <MyDeckScreen userId={user?.id ?? null} isGuest={user?.isAnonymous ?? false} onPlay={playMyDeck} onBack={() => setScreen({ name: 'home' })} />
+          </SafeAreaView>
+        ) : screen.name === 'account' && user ? (
+          <SafeAreaView style={styles.root}>
+            <AccountScreen user={user} onBack={() => setScreen({ name: 'home' })} />
           </SafeAreaView>
         ) : screen.name === 'create' ? (
           // Tela cheia (a câmera ocupa tudo); o Layout interno cuida do resto.
@@ -76,7 +106,13 @@ export default function App() {
         ) : (
           <SafeAreaView style={styles.root}>
             {screen.name === 'home' ? (
-              <HomeScreen onPlay={() => setScreen({ name: 'decks' })} onCreateCard={() => setScreen({ name: 'create' })} onMyDeck={() => setScreen({ name: 'mydeck' })} />
+              <HomeScreen
+                onPlay={() => setScreen({ name: 'decks' })}
+                onCreateCard={() => setScreen({ name: 'create' })}
+                onMyDeck={() => setScreen({ name: 'mydeck' })}
+                onAccount={user ? () => setScreen({ name: 'account' }) : undefined}
+                accountLabel={user ? (user.isAnonymous ? 'Convidado · criar conta' : (user.email ?? 'Minha conta')) : undefined}
+              />
             ) : (
               <DeckPickScreen onStart={startGame} onBack={() => setScreen({ name: 'home' })} />
             )}
@@ -90,4 +126,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
+  loading: { flex: 1 },
 });

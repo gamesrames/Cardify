@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-Fase 1 (protótipo offline) em andamento: o motor de combate, 30 cartas fixas e o simulador estão no PR #1 (`engine/`). O app Expo e o servidor ainda não existem.
+Fases 1 e 2 no `main` (motor, app Expo, foto vira carta, "Meu baralho"). **Fase 3 (contas e nuvem) em andamento**: migração, app e testes escritos; falta o usuário configurar o SMTP no Supabase e aplicar a migração, e testar a conta em aparelho. Critério de pronto da fase 3 na tabela abaixo (detalhado em `backend.md`).
 
 ## O produto
 

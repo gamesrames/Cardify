@@ -6,6 +6,8 @@ Pasta: `app/`. Dono: thread do app. Para o contrato com o motor, leia só a seç
 
 Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolher baralho → partida contra o bot → resultado com revanche. Verificado sem celular: checagem de tipos, empacotamento do Metro (Android) e 200 partidas completas rodando o mesmo caminho de código das telas. **Ainda não testado em aparelho**: esse é o critério de "pronto" e depende do usuário (passo a passo abaixo).
 
+**Fase 3 (contas e nuvem) escrita e testada sem celular** (testes do `app/`, tipos, empacotamento web e a tela de boas-vindas vista no navegador; o envio do código e a conta real **não** foram exercitados porque o ambiente não alcança o Supabase). Veja a seção "Fase 3" abaixo.
+
 Animações continuam fora. A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
 
 ## Fase 2: tela "Criar carta" (PR separado do PR do servidor)
@@ -14,7 +16,7 @@ Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API 
 
 - Início → "Criar carta com uma foto" → câmera do app (`expo-camera`, funciona no Expo Go) → foto reduzida a 1280 px e regravada como JPEG (some o EXIF; `expo-image-manipulator`) → com o classificador manual, escolher a categoria numa lista → envio à função `create-card` → a carta aparece com o `CardView`, **com a foto dentro** (`photoUri`).
 - A foto da carta recém-criada vem do próprio aparelho (data URI). Para cartas antigas (coleção, fase 2/3) será preciso URL assinada do Storage: o bucket `card-photos` é privado e o dono já tem policy de leitura em `supabase/migrations/20261108000002_fotos_storage.sql`.
-- Login anônimo automático (`supabase.auth.signInAnonymously`), sessão guardada no aparelho (AsyncStorage). Sem sessão guardada (app reinstalado), vira outro usuário anônimo: as cartas antigas ficam no servidor, mas não voltam (a fase 3 resolve com login de verdade).
+- Login de convidado (`signInAnonymously`) só quando o jogador escolhe "Começar como convidado" (fase 3; antes era automático), sessão guardada no aparelho (AsyncStorage). Convidado que perde a sessão não recupera as cartas: por isso existe a conta (fase 3).
 - Erros do servidor mostram a mensagem em português (cota do dia, foto repetida...). Falhas de rede e do reconhecimento têm "Tentar de novo".
 - Arquivos: `src/cardApi.ts` (chamada HTTP, sem React Native, testável), `src/supabase.ts` (cliente e sessão), `src/photo.ts` (reduzir/regravar), `src/screens/CreateCardScreen.tsx`.
 - Configuração: copie `app/.env.example` para `app/.env.local` e preencha a URL e a chave pública (publishable) do projeto (Supabase → Project Settings → API). `EXPO_PUBLIC_MANUAL_CATEGORY=true` mostra a lista de categorias; use `false` quando o Gemini estiver ligado no servidor. Depois de mudar o `.env.local`, rode `npx expo start -c`.
@@ -27,11 +29,26 @@ Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API 
 3. Criar carta → tirar foto → escolher a categoria → a carta aparece em poucos segundos.
 4. Tire a mesma foto de novo: deve aparecer "Essa foto (ou uma quase igual) já virou carta". A 15ª foto do dia deve ser recusada.
 
+## Fase 3: conta e baralho na nuvem
+
+- **Sem sessão** (app novo, outro aparelho, depois de sair): `WelcomeScreen` com "Já tenho conta" (e-mail → código de 6 dígitos) e "Começar como convidado" (login anônimo, como na fase 2). Com sessão guardada, abre direto no menu. Sem servidor configurado (modo offline da fase 1), o app abre no menu e a conta some.
+- **Minha conta** (`AccountScreen`, botão no menu): o convidado cria a conta ligando um e-mail ao **mesmo usuário** (`updateUser({ email })` + código tipo `email_change`), então as cartas ficam. Quem já tem conta edita o nome de jogador e sai. O convidado que quer entrar numa conta antiga recebe o aviso de que as cartas do convidado não vão junto.
+- **Baralho na nuvem** (`deckSync.ts`, `MyDeckScreen`): a nuvem manda; se estiver vazia, o baralho do aparelho sobe uma vez (inclusive o da fase 2, que ficava sem dono na chave `v1`). Há cópia local por usuário (`v2.<id>`) para jogar sem internet; sem rede o rodapé avisa e a próxima alteração tenta enviar de novo. Gravações vão numa fila (uma por vez, só a mais nova).
+- Arquivos novos: `src/auth.ts` (chamadas de login), `src/authText.ts` (validação e mensagens em português), `src/useAuth.ts` (estado da sessão), `src/deckSync.ts`, `src/components/EmailCodeForm.tsx`, `src/screens/WelcomeScreen.tsx`, `src/screens/AccountScreen.tsx`. Testes: `test/deckSync.test.ts`, `test/authText.test.ts`.
+- Pré-requisitos no painel do Supabase (SMTP e modelos de e-mail): `backend.md`, "Como publicar a fase 3".
+
+### Como testar a conta (depois de configurar o SMTP e aplicar a migração)
+
+1. App aberto com a sessão de convidado que já tem as suas cartas → **Convidado · criar conta** → e-mail → digite o código que chegou. As cartas continuam em "Meu baralho".
+2. Monte o baralho de 7 e confira "Salvo na nuvem".
+3. Outro aparelho (ou navegador limpo / app reinstalado): **Já tenho conta** → mesmo e-mail → código → "Meu baralho" mostra as mesmas cartas, com fotos, e o mesmo baralho.
+4. Sair da conta volta às boas-vindas. Teste também com o Wi-Fi desligado: o baralho local abre e o rodapé avisa que está sem conexão.
+
 ### Meu baralho (coleção + montar baralho)
 
 Tela `MyDeckScreen`: lista as cartas de foto do jogador (lidas da tabela `cards`, a RLS só devolve as dele) e as 30 fixas; o jogador marca 7. O app valida com `validateDeck` do motor (7 cartas, teto de poder por raridade com bônus de foto, limite de 110) e só habilita "Jogar contra o bot" com baralho válido.
 
-- **O baralho fica só neste aparelho** (AsyncStorage, `src/deckStorage.ts`, lista de ids). Baralhos na nuvem são da fase 3 (`decisoes.md`).
+- **Desde a fase 3 o baralho fica na conta** (tabela `decks`) com cópia no aparelho (AsyncStorage, `src/deckStorage.ts`, por usuário). Na fase 2 era só no aparelho.
 - As fotos vêm de URLs assinadas de 1 h do bucket privado (`signedPhotoUrls`). Sem rede ou sem servidor, a tela avisa e deixa montar só com as cartas fixas.
 - A partida resolve o baralho pelo nome: `"Meu baralho"` lê `src/customDeck.ts` (`setCustomDeck` antes de iniciar). O bot continua com um baralho pronto sorteado.
 - O `CardView` acha a foto sozinho pelo id da carta (`src/cardPhotos.tsx`, contexto), então `GameScreen` não mudou.
@@ -115,7 +132,7 @@ Botão voltar do Android durante a partida pede confirmação antes de sair.
 ## A definir
 
 - Biblioteca de navegação e de estado: reavaliar quando entrar câmera e coleção (fase 2).
-- Baralhos e coleção na nuvem (trocar de celular sem perder): fase 3. Várias listas de baralho salvas: hoje só um ("Meu baralho").
+- Várias listas de baralho salvas: o servidor já aceita, o app usa só um ("Meu baralho").
 
 ## Convenções
 
