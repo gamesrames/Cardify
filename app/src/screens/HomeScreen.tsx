@@ -7,6 +7,9 @@ interface Props {
   onPlay: () => void;
   onCreateCard: () => void;
   onMyDeck: () => void;
+  /** Sem servidor configurado (modo offline) não há conta: o botão some. */
+  onAccount?: () => void;
+  accountLabel?: string;
 }
 
 /** Ciclo de vantagens montado a partir do motor (nada de regra copiada aqui). */
@@ -19,12 +22,12 @@ function advantageCycle(): string {
   return parts.join('  ·  ');
 }
 
-export function HomeScreen({ onPlay, onCreateCard, onMyDeck }: Props) {
+export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onAccount, accountLabel }: Props) {
   const r = DEFAULT_RULES;
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Cardify</Text>
-      <Text style={styles.subtitle}>Protótipo · fases 1 e 2</Text>
+      <Text style={styles.subtitle}>Protótipo · fases 1 a 3</Text>
 
       <View style={styles.box}>
         <Text style={styles.boxTitle}>Como jogar</Text>
@@ -41,6 +44,7 @@ export function HomeScreen({ onPlay, onCreateCard, onMyDeck }: Props) {
       <Button label="Jogar contra o bot" onPress={onPlay} />
       <Button label="Meu baralho (com as suas fotos)" variant="secondary" onPress={onMyDeck} />
       <Button label="Criar carta com uma foto" variant="secondary" onPress={onCreateCard} />
+      {onAccount && <Button label={accountLabel ?? 'Minha conta'} variant="secondary" onPress={onAccount} />}
     </ScrollView>
   );
 }

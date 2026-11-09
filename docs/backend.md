@@ -1,10 +1,12 @@
 # Backend (Supabase)
 
-Pasta: `supabase/`. Dono: thread de backend. Fase 2 em andamento.
+Pasta: `supabase/`. Dono: thread de backend. Fase 2 concluída; fase 3 (contas e nuvem) em andamento.
 
 ## Estado atual
 
 Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar na **versão 6 com o Gemini ligado** (segredos `GEMINI_API_KEY` e `CLASSIFIER=gemini`, salvos pelo usuário; modelo padrão `gemini-flash-lite-latest`). Já foi chamada de verdade pelo app no navegador (login anônimo ligado, carta e foto gravadas no banco e no Storage, categoria detectada pelo Gemini). **Ainda não testada a partir de um celular.** O ambiente de desenvolvimento não alcança `supabase.co`; testes reais só pelo usuário ou pelo MCP do Supabase. Se o Gemini falhar, a função devolve 502 sem registrar a causa (melhoria possível: `console.error` da mensagem do `ClassifierError`). Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
+
+**Fase 3 (escrita e testada no computador, PR #11):** migração `20261109000001_perfis_e_baralhos.sql` com `profiles` e `decks` (RLS por dono, 14 testes pelos papéis `authenticated` e `anon` em `test/contas.test.ts`). **A migração ainda não foi aplicada no projeto real** (a aplicação pelo MCP foi negada; veja "Como publicar a fase 3"). Não existem ainda: partidas (fase 4).
 
 ## Decidido
 
@@ -29,7 +31,31 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 - `cards`: dono, nome, `photo_path`, `photo_hash bit(64)`, categoria, elemento, raridade, ataque, vida, `seed`, `bonus_points`, data. O cliente só lê as próprias.
 - `photo_check(usuário, hash)` → `ok` | `quota_exceeded` | `duplicate`. Cota = cartas do dia em São Paulo.
 - `insert_card(...)`: lock por usuário, refaz `photo_check` e insere. Só a chave de serviço executa (revogado de `anon` e `authenticated`).
-- Rascunho para as próximas fases (não é decisão): `profiles`, `decks`/`deck_cards`, `matches`/`match_actions`.
+- Rascunho para a fase 4 (não é decisão): `matches`/`match_actions`.
+
+## Dados da fase 3 (implementado em `supabase/migrations/20261109000001_perfis_e_baralhos.sql`)
+
+- **O id do jogador é o id do login** (`auth.users.id`). Quando o convidado (login anônimo) cria a conta, o Supabase **mantém o mesmo id**: cartas, baralho e perfil continuam dele, sem migração. Quem entra numa conta que já existia deixa o convidado para trás (as cartas do convidado não são fundidas; a tela avisa).
+- `profiles(id, display_name, created_at, updated_at)`: criado por trigger em cada login novo (e para quem já existia). O cliente lê o próprio e edita só `display_name` (2 a 20 letras; `grant update (display_name)`). Na fase 4 uma policy nova deixa o adversário ler o nome durante a partida.
+- `decks(id, owner_id, name, card_ids text[], ...)`, `unique (owner_id, name)`: o app usa um baralho chamado "Meu baralho" (o esquema aceita vários). `card_ids` mistura ids de cartas fixas (texto do motor) e de foto (uuid). O dono faz CRUD só nos próprios (RLS). **O banco não valida se o baralho é legal** (7 cartas, teto de poder, posse das cartas): isso é do motor, no servidor, ao iniciar a partida (fase 4). Só há um limite de higiene de 20 ids.
+- Reforço nas tabelas da fase 2: tirada a permissão de escrita de `anon` e `authenticated` em `cards` e `categories`, e todo acesso a `app_config` (além da RLS).
+- Login (opção B, 2026-11-09): **apelido + senha**, sem e-mail de verdade. Por baixo o Supabase recebe um e-mail fictício `cardify.<apelido>@<domínio>` (`app/src/authText.ts`; domínio padrão `gmail.com`, troque com `EXPO_PUBLIC_LOGIN_EMAIL_DOMAIN` se o servidor recusar). Nada é enviado a esse endereço, porque o app não usa confirmação nem recuperação de senha. Convidado (login anônimo) continua existindo. Para voltar a e-mail de verdade no lançamento, só `app/src/auth.ts` e os formulários mudam. Decisão e alternativas em `decisoes.md`.
+
+## Como publicar a fase 3 (passos do usuário no painel)
+
+1. **Aplicar a migração** `supabase/migrations/20261109000001_perfis_e_baralhos.sql`: abra o painel → **SQL Editor** → New query → cole o conteúdo do arquivo inteiro → Run. (Ou libere a thread para aplicar pelo MCP.) Depois confira em Table Editor que existem `profiles` e `decks`.
+2. **Desligar "Confirm email"**: Authentication → Sign In / Providers → Email → desmarque **Confirm email** → Save. Sem isso o Supabase tenta mandar um e-mail de confirmação para o endereço fictício, a conta fica como convidado e o app avisa o motivo. Não precisa de SMTP nem de modelos de e-mail.
+3. Conferir **Allow anonymous sign-ins** ligado (já estava, da fase 2).
+
+### Limites do login por apelido (B)
+
+- **Sem recuperação de senha.** Quem esquecer perde a conta, a não ser que quem cuida do projeto redefina no SQL Editor: `update auth.users set encrypted_password = crypt('NOVA_SENHA', gen_salt('bf')) where email = 'cardify.APELIDO@gmail.com';` (troque o domínio se mudou `EXPO_PUBLIC_LOGIN_EMAIL_DOMAIN`).
+- **Apelido único, por ordem de chegada.** Qualquer um cria "joao" antes do João; não há como provar quem é dono do nome. Serve para amigos próximos, não para lançamento aberto.
+- Qualquer um que chame a API direto pode pedir recuperação de senha para o e-mail fictício (cairia no domínio configurado). O app nunca faz isso; é um risco aceito no protótipo.
+
+### Ainda não verificado (o ambiente de desenvolvimento não alcança o Supabase)
+
+O upgrade do convidado para apelido + senha mantendo o **mesmo id** (e portanto as cartas) depende do comportamento do Supabase com "Confirm email" desligado: o app liga o e-mail fictício com `updateUser({ email })`, confere que ele foi aplicado e só então define a senha. Se o servidor recusar (por exemplo `email_address_invalid` no domínio), o app mostra a causa. **Plano B se esse caminho falhar:** uma Edge Function `create-account` que usa a chave de serviço (`auth.admin.updateUserById(id, { email, password, email_confirm: true })`), que não depende da confirmação nem do domínio. O primeiro teste real é o roteiro em `app.md`.
 
 ## Contrato da função `create-card` (app ↔ servidor)
 
