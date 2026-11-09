@@ -74,6 +74,17 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | --- | --- | --- |
 | **Desistir é uma ação do motor**, `{ type: 'forfeit', player }`: termina a partida na hora, o adversário vence, `endReason: 'forfeit'`. Vale a qualquer momento e para qualquer jogador; não entra em `legalActions`. Todo fim de jogo agora tem motivo (`hp_zero`, `turn_limit`, `forfeit`). No app, botão "Desistir" com confirmação na tela de partida. | Testar sem jogar 25+ turnos, e o 1x1 online da fase 4 precisa da mesma regra no servidor (quem desiste fora da vez, quem some). Sem mexer em balanceamento. | Motor / App |
 
+## 2026-11-09 (fase 4: partidas online)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Cada turno é resolvido por uma Edge Function `match` (uma jogada por chamada, motor no servidor), com o estado completo em Postgres (`matches`, sem acesso do cliente). O Realtime só avisa; ele não carrega decisão. | Fica no plano grátis, sem servidor fixo, e reaproveita o motor sem reescrever regra. Alternativas descartadas: servidor persistente (sem hospedagem grátis confiável) e motor em SQL (duplicaria as regras). | Backend |
+| Cada jogador lê só a própria linha de `match_views` (visão montada por `viewFor`: própria mão, só a quantidade da mão do outro); o Realtime respeita essa RLS. Reserva: consulta periódica. | A mão e o monte do adversário nunca saem do servidor, nem pelo banco nem pelo tempo real. | Backend / Motor |
+| Convite por **código de 6 caracteres** (sem 0/O/1/I), validade 15 min; o servidor lê o baralho "Meu baralho" da nuvem e valida a posse das cartas. Um jogador tem uma partida em aberto por vez. | Link direto não funciona bem no Expo Go; baralho vindo do servidor impede o app de mandar cartas que o jogador não tem. | Backend |
+| Tempo do turno 60 s; 1º estouro passa o turno sozinho; 2 estouros seguidos do mesmo jogador = derrota por tempo (desfecho `forfeit` do motor); turno vencido há mais de 5 min = abandono. Valores em `app_config`. Quem aplica é o pedido `timeout`, que o app do jogador que espera (ou de quem volta) manda e o servidor confere pelo relógio dele. **Recomendação seguida enquanto o usuário não confirma o cartão de decisão.** | Sem processo fixo não há relógio no servidor; sem pg_cron, o próprio app dispara a conferência. Perdoa uma travada de rede e não deixa partida abandonada presa. | Backend |
+| A visão por jogador (`viewFor`, `redactEvents`, `PlayerView`) mora em `engine/src/view.ts`, só como acréscimo ao contrato do motor. | É regra de "o que cada jogador pode saber"; o app e o servidor usam o mesmo tipo. | Motor |
+| Fotos do adversário: a visão lista as fotos das cartas dele já jogadas (em campo ou mortas) e uma policy de `storage.objects` libera exatamente esses caminhos (`match_views.photo_paths`). Nome do adversário vai dentro da visão; a policy extra em `profiles` da fase 3 não foi necessária. | Decisão do projeto: fotos são visíveis para os outros, mas cartas ainda escondidas na mão ou no monte não podem vazar pelo caminho da foto. | Backend |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).

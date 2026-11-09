@@ -8,7 +8,7 @@ Contexto do projeto dividido por área, para cada agente ler só o que precisa. 
 | --- | --- | --- |
 | Regras, fórmulas, balanceamento | `visao-geral.md`, `game-design.md`, `engine.md` | `engine/` |
 | App (telas, navegação, câmera) | `visao-geral.md`, `app.md`, `game-design.md` (resumo das regras), `engine.md` (só a API) | `app/` |
-| Servidor (banco, login, partidas online) | `visao-geral.md`, `backend.md`, `engine.md` (só a API) | `supabase/` |
+| Servidor (banco, login, partidas online) | `visao-geral.md`, `backend.md`, `partidas-online.md` (fase 4), `engine.md` (só a API) | `supabase/` |
 | Geração de cartas a partir de foto, moderação | `visao-geral.md`, `geracao-cartas.md`, `game-design.md` (fórmulas), `backend.md` | `supabase/` e `app/` (partes da câmera) |
 | Coordenação, novas threads | `agentes.md`, `decisoes.md` | — |
 
@@ -21,7 +21,8 @@ Todo mundo deve passar por `visao-geral.md` na primeira vez.
 - [`game-design.md`](game-design.md) — regras, elementos, raridades, fórmulas e valores.
 - [`engine.md`](engine.md) — motor de combate, API, simulador, achados de balanceamento.
 - [`app.md`](app.md) — app Expo: stack, telas previstas, como testar no celular.
-- [`backend.md`](backend.md) — Supabase: dados, segurança, partidas online.
+- [`backend.md`](backend.md) — Supabase: dados, segurança, login.
+- [`partidas-online.md`](partidas-online.md) — fase 4: 1x1 por convite, turnos no servidor, tempo de turno, privacidade da mão.
 - [`geracao-cartas.md`](geracao-cartas.md) — da foto à carta, duplicatas, moderação e privacidade.
 - [`decisoes.md`](decisoes.md) — registro de decisões em ordem cronológica.
 

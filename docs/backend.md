@@ -1,12 +1,14 @@
 # Backend (Supabase)
 
-Pasta: `supabase/`. Dono: thread de backend. Fases 2 e 3 concluídas no navegador (celular físico pendente); fase 4 (partidas online) é a próxima.
+Pasta: `supabase/`. Dono: thread de backend. Fases 2 e 3 concluídas no navegador (celular físico pendente); fase 4 (partidas online) tem o servidor escrito, veja [`partidas-online.md`](partidas-online.md).
 
 ## Estado atual
 
-Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar na **versão 6 com o Gemini ligado** (segredos `GEMINI_API_KEY` e `CLASSIFIER=gemini`, salvos pelo usuário; modelo padrão `gemini-flash-lite-latest`). Já foi chamada de verdade pelo app no navegador (login anônimo ligado, carta e foto gravadas no banco e no Storage, categoria detectada pelo Gemini). **Ainda não testada a partir de um celular.** O ambiente de desenvolvimento não alcança `supabase.co`; testes reais só pelo usuário ou pelo MCP do Supabase. Se o Gemini falhar, a função devolve 502 sem registrar a causa (melhoria possível: `console.error` da mensagem do `ClassifierError`). Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
+Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar na **versão 6 com o Gemini ligado** (segredos `GEMINI_API_KEY` e `CLASSIFIER=gemini`, salvos pelo usuário; modelo padrão `gemini-flash-lite-latest`). Já foi chamada de verdade pelo app no navegador (login anônimo ligado, carta e foto gravadas no banco e no Storage, categoria detectada pelo Gemini). **Ainda não testada a partir de um celular.** O ambiente de desenvolvimento não alcança `supabase.co`; testes reais só pelo usuário ou pelo MCP do Supabase. Se o Gemini falhar, a função devolve 502 sem registrar a causa (melhoria possível: `console.error` da mensagem do `ClassifierError`). Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Em 2026-11-09 entraram `profiles` e `decks` (fase 3) e, na fase 4, as partidas.
 
 **Fase 3 (no `main`, PR #11):** migração `20261109000001_perfis_e_baralhos.sql` com `profiles` e `decks` (RLS por dono, 14 testes pelos papéis `authenticated` e `anon` em `test/contas.test.ts`). **Migração aplicada no projeto real pelo usuário em 2026-11-09** (SQL Editor, "Success. No rows returned") e "Confirm email" desligado. **Conta criada de verdade** a partir do convidado: conferido no banco que o usuário continua com o **mesmo id**, `is_anonymous = false`, e-mail fictício gravado, **2 cartas** e `display_name` igual ao apelido. Baralho "Meu baralho" com 7 cartas (uma delas de foto) **salvo na nuvem** (conferido na tabela `decks`). Entrar de novo e em outra aba anônima também foi testado (ver "Verificado e pendente"). Não existem ainda: partidas (fase 4).
+
+**Fase 4 (servidor, 2026-11-09):** migração `20261109000002_partidas_online.sql` (`matches`, `match_views`, funções `match_*`, policy de fotos do adversário, Realtime) e Edge Function `match`, **ainda não publicadas** (passos em [`partidas-online.md`](partidas-online.md)). Tudo sobre partidas (contrato, tempo de turno, privacidade) fica nesse doc, não aqui.
 
 ## Decidido
 
@@ -22,7 +24,7 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 | --- | --- |
 | 2 | Login anônimo, tabela de cartas, função que cria a carta (semente + raridade + atributos), hash perceptual, limite diário |
 | 3 | Login Google/e-mail (Apple quando houver iOS), coleção e baralhos na nuvem, migração de conta anônima |
-| 4 | Partidas: convite por código, turnos resolvidos no servidor, tempo real para os dois jogadores, tempo limite por turno, reconexão |
+| 4 | Partidas: convite por código, turnos resolvidos no servidor, tempo real para os dois jogadores, tempo limite por turno, reconexão (detalhes em `partidas-online.md`) |
 
 ## Dados da fase 2 (implementado em `supabase/migrations/`)
 
@@ -31,7 +33,6 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 - `cards`: dono, nome, `photo_path`, `photo_hash bit(64)`, categoria, elemento, raridade, ataque, vida, `seed`, `bonus_points`, data. O cliente só lê as próprias.
 - `photo_check(usuário, hash)` → `ok` | `quota_exceeded` | `duplicate`. Cota = cartas do dia em São Paulo.
 - `insert_card(...)`: lock por usuário, refaz `photo_check` e insere. Só a chave de serviço executa (revogado de `anon` e `authenticated`).
-- Rascunho para a fase 4 (não é decisão): `matches`/`match_actions`.
 
 ## Dados da fase 3 (implementado em `supabase/migrations/20261109000001_perfis_e_baralhos.sql`)
 
@@ -75,12 +76,12 @@ Erros: `401 unauthorized`, `400 invalid_request`, `429 quota_exceeded`, `409 dup
 ```bash
 cd supabase
 npm install
-npm test            # 39 testes, ~25 s (cada teste sobe um Postgres em memória)
+npm test            # ~83 testes, ~40 s (cada teste sobe um Postgres em memória)
 npm run typecheck
-npm run build       # gera functions/create-card/index.ts (commitar o resultado)
+npm run build       # gera functions/create-card/index.ts e functions/match/index.ts (commitar o resultado)
 ```
 
-`functions/create-card/index.ts` é **gerado**: o esbuild junta o código e o motor num arquivo só, porque o Deno das Edge Functions exige extensão nos imports e o motor não usa. Edite `src/`, nunca o gerado. O bundle foi publicado, mas ainda **não foi chamado de verdade** (não há Deno neste ambiente): a primeira chamada pelo app ou por `curl` confirma que ele roda.
+`functions/create-card/index.ts` e `functions/match/index.ts` são **gerados**: o esbuild junta o código e o motor num arquivo só, porque o Deno das Edge Functions exige extensão nos imports e o motor não usa. Edite `src/`, nunca o gerado. (`create-card` não mudou na fase 4: não precisa republicar.) O bundle foi publicado, mas ainda **não foi chamado de verdade** (não há Deno neste ambiente): a primeira chamada pelo app ou por `curl` confirma que ele roda.
 
 ## Como publicar
 

@@ -10,6 +10,8 @@ Motor no `main` desde o **PR #1**: 30 cartas, validação de baralho, 5 baralhos
 
 **Desistência (2026-11-09):** nova ação `{ type: 'forfeit', player }`. Termina a partida na hora com o adversário como vencedor. Vale a qualquer momento e para qualquer jogador (inclusive fora da vez, que é o caso do 1x1 online), por isso carrega o `player` e **não** aparece em `legalActions` (que lista só as ações do jogador ativo); `applyAction` a trata antes da checagem de legalidade e lança erro se a partida já terminou. O estado ganhou `endReason` (`'hp_zero' | 'turn_limit' | 'forfeit' | null`) e o evento `game_over` ganhou `reason`. 8 testes novos (26 no total).
 
+**Visão por jogador (fase 4, 2026-11-09):** `engine/src/view.ts`, só acréscimo (nada do contrato anterior mudou). `viewFor(state, seat)` devolve o `PlayerView` do jogador: a própria mão, só a *quantidade* de cartas da mão e do monte do adversário, campos e descartes (que são públicos), `energy`, `winner`, `endReason` e `legal` (as ações do motor permitidas a ele agora; vazio fora da vez). Não inclui a ordem dos montes nem `rngState` (que permitiria prever compras). `redactEvents(events, seat)` tira dos eventos as compras do adversário. O servidor guarda o `GameState` completo e manda a cada jogador só isto. Testes em `test/view.test.ts` (nenhum id do outro baralho aparece na visão antes de ser jogado). Detalhes do uso em [`partidas-online.md`](partidas-online.md).
+
 ## Princípios
 
 - **TypeScript puro**: sem tela, relógio, rede ou `Math.random`. Roda no celular (fase 1) e no servidor (fases 2 a 4) com o mesmo código.
@@ -28,6 +30,7 @@ Motor no `main` desde o **PR #1**: 30 cartas, validação de baralho, 5 baralhos
 | `cardPower`, `deckPower`, `energyCostOf`, `damageAgainst`, `elementMultiplier`, `maxCardPower`, `photoBonusCap`, `upgradeCap` | Helpers de regra. |
 | `greedyBot`, `makeRandomBot(rng)` | Bots. Cada chamada devolve **uma** ação; chame de novo até vir `{type:'end'}`. O guloso é determinístico. |
 | `CARDS`, `PREBUILT_DECKS` | Cartas fixas da fase 1 e baralhos prontos. |
+| `viewFor(state, seat)`, `redactEvents(events, seat)`, `PlayerView` | Visão de um jogador sem os segredos do adversário (fase 4; veja acima). |
 | `GameEvent` | Eventos para o app animar/mostrar o log (`turn_start`, `draw`, `play`, `attack_creature`, `attack_player`, `creature_died`, `game_over` com `winner` e `reason`). |
 
 Arquivos: `types.ts` (tipos), `rules.ts` (regras e `DEFAULT_RULES`), `cards.ts`, `deck.ts`, `game.ts`, `bots.ts`, `rng.ts` (gerador determinístico).
