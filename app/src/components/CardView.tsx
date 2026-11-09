@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCardPhoto } from '../cardPhotos';
 import { DEFAULT_RULES, energyCostOf } from '../motor';
 import type { CardDef } from '../motor';
 import { CARD_ASPECT } from '../layout';
@@ -21,6 +22,8 @@ interface Props {
 export function CardView({ card, width, health, selected = false, dimmed = false, photoUri, onPress }: Props) {
   const element = ELEMENT_INFO[card.element];
   const rarity = RARITY_INFO[card.rarity];
+  const contextPhoto = useCardPhoto(card.id); // hook sempre chamado, na mesma ordem
+  const art = photoUri ?? contextPhoto;
   const currentHealth = health ?? card.health;
   const damaged = currentHealth < card.health;
   return (
@@ -45,7 +48,7 @@ export function CardView({ card, width, health, selected = false, dimmed = false
       <Text style={[styles.rarity, { color: rarity.color }]} numberOfLines={1}>
         {rarity.label}
       </Text>
-      {photoUri && <Image source={{ uri: photoUri }} style={styles.art} resizeMode="cover" />}
+      {art && <Image source={{ uri: art }} style={styles.art} resizeMode="cover" />}
       <View style={styles.stats}>
         <Text style={styles.stat}>⚔️ {card.attack}</Text>
         <Text style={[styles.stat, damaged && { color: colors.bad }]}>❤️ {currentHealth}</Text>

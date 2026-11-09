@@ -53,3 +53,28 @@ export async function listCategories(): Promise<CategoryOption[]> {
   if (error) throw new Error('Não consegui carregar as categorias.');
   return data ?? [];
 }
+
+import type { CardRow } from './myCards';
+
+/** Cartas criadas pelo usuário atual (a RLS do servidor só devolve as dele), mais novas primeiro. */
+export async function listMyCards(): Promise<CardRow[]> {
+  const supabase = requireClient();
+  await ensureSession();
+  const { data, error } = await supabase
+    .from('cards')
+    .select('id, name, element, rarity, attack, health, photo_path')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error('Não consegui carregar as suas cartas.');
+  return (data ?? []) as CardRow[];
+}
+
+/** Endereços temporários (1 h) das fotos, que ficam num bucket privado. Devolve `caminho → URL`. */
+export async function signedPhotoUrls(paths: readonly string[]): Promise<Record<string, string>> {
+  if (paths.length === 0) return {};
+  const supabase = requireClient();
+  const { data, error } = await supabase.storage.from('card-photos').createSignedUrls([...paths], 3600);
+  if (error) throw new Error('Não consegui carregar as fotos.');
+  const urls: Record<string, string> = {};
+  for (const item of data ?? []) if (item.path && item.signedUrl) urls[item.path] = item.signedUrl;
+  return urls;
+}

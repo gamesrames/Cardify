@@ -3,6 +3,10 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PREBUILT_DECKS } from './src/motor';
+import type { CardDef } from './src/motor';
+import { CardPhotosProvider } from './src/cardPhotos';
+import { CUSTOM_DECK_NAME, setCustomDeck } from './src/customDeck';
+import { MyDeckScreen } from './src/screens/MyDeckScreen';
 import { CreateCardScreen } from './src/screens/CreateCardScreen';
 import { DeckPickScreen } from './src/screens/DeckPickScreen';
 import { GameScreen } from './src/screens/GameScreen';
@@ -15,6 +19,7 @@ type Screen =
   | { name: 'home' }
   | { name: 'decks' }
   | { name: 'create' }
+  | { name: 'mydeck' }
   | { name: 'game'; playerDeck: string; botDeck: string; seed: number };
 
 /** A semente é sorteada AQUI (camada de tela). O motor em si nunca usa Math.random. */
@@ -30,12 +35,21 @@ function pickBotDeck(playerDeck: string): string {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
+  // Fotos das cartas do jogador (id da carta → endereço), lidas pelo CardView via contexto.
+  const [photos, setPhotos] = useState<Record<string, string>>({});
 
   function startGame(playerDeck: string) {
     setScreen({ name: 'game', playerDeck, botDeck: pickBotDeck(playerDeck), seed: newSeed() });
   }
 
+  function playMyDeck(deck: CardDef[], deckPhotos: Record<string, string>) {
+    setCustomDeck(deck);
+    setPhotos(deckPhotos);
+    startGame(CUSTOM_DECK_NAME);
+  }
+
   return (
+    <CardPhotosProvider value={photos}>
     <SafeAreaProvider>
       <StatusBar style="light" />
       <View style={styles.root}>
@@ -50,6 +64,10 @@ export default function App() {
             onChangeDeck={() => setScreen({ name: 'decks' })}
             onMenu={() => setScreen({ name: 'home' })}
           />
+        ) : screen.name === 'mydeck' ? (
+          <SafeAreaView style={styles.root}>
+            <MyDeckScreen onPlay={playMyDeck} onBack={() => setScreen({ name: 'home' })} />
+          </SafeAreaView>
         ) : screen.name === 'create' ? (
           // Tela cheia (a câmera ocupa tudo); o Layout interno cuida do resto.
           <SafeAreaView style={styles.root}>
@@ -58,7 +76,7 @@ export default function App() {
         ) : (
           <SafeAreaView style={styles.root}>
             {screen.name === 'home' ? (
-              <HomeScreen onPlay={() => setScreen({ name: 'decks' })} onCreateCard={() => setScreen({ name: 'create' })} />
+              <HomeScreen onPlay={() => setScreen({ name: 'decks' })} onCreateCard={() => setScreen({ name: 'create' })} onMyDeck={() => setScreen({ name: 'mydeck' })} />
             ) : (
               <DeckPickScreen onStart={startGame} onBack={() => setScreen({ name: 'home' })} />
             )}
@@ -66,6 +84,7 @@ export default function App() {
         )}
       </View>
     </SafeAreaProvider>
+    </CardPhotosProvider>
   );
 }
 

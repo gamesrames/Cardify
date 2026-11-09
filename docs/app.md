@@ -6,7 +6,7 @@ Pasta: `app/`. Dono: thread do app. Para o contrato com o motor, leia só a seç
 
 Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolher baralho → partida contra o bot → resultado com revanche. Verificado sem celular: checagem de tipos, empacotamento do Metro (Android) e 200 partidas completas rodando o mesmo caminho de código das telas. **Ainda não testado em aparelho**: esse é o critério de "pronto" e depende do usuário (passo a passo abaixo).
 
-Fora desta entrega (planejado): coleção de cartas, montar baralho próprio de 7 cartas, animações. Hoje o jogador só escolhe um dos 5 baralhos prontos (`PREBUILT_DECKS`).
+Animações continuam fora. A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
 
 ## Fase 2: tela "Criar carta" (PR separado do PR do servidor)
 
@@ -26,6 +26,17 @@ Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API 
 2. `cd app && npm install && npx expo start -c`. No celular, escaneie o QR (mesmo roteiro da fase 1) e permita a câmera.
 3. Criar carta → tirar foto → escolher a categoria → a carta aparece em poucos segundos.
 4. Tire a mesma foto de novo: deve aparecer "Essa foto (ou uma quase igual) já virou carta". A 15ª foto do dia deve ser recusada.
+
+### Meu baralho (coleção + montar baralho)
+
+Tela `MyDeckScreen`: lista as cartas de foto do jogador (lidas da tabela `cards`, a RLS só devolve as dele) e as 30 fixas; o jogador marca 7. O app valida com `validateDeck` do motor (7 cartas, teto de poder por raridade com bônus de foto, limite de 110) e só habilita "Jogar contra o bot" com baralho válido.
+
+- **O baralho fica só neste aparelho** (AsyncStorage, `src/deckStorage.ts`, lista de ids). Baralhos na nuvem são da fase 3 (`decisoes.md`).
+- As fotos vêm de URLs assinadas de 1 h do bucket privado (`signedPhotoUrls`). Sem rede ou sem servidor, a tela avisa e deixa montar só com as cartas fixas.
+- A partida resolve o baralho pelo nome: `"Meu baralho"` lê `src/customDeck.ts` (`setCustomDeck` antes de iniciar). O bot continua com um baralho pronto sorteado.
+- O `CardView` acha a foto sozinho pelo id da carta (`src/cardPhotos.tsx`, contexto), então `GameScreen` não mudou.
+- Verificado no navegador (Playwright contra `expo start --web`, sem servidor): montar 7 cartas, contador 7/7 e poder 96/110, jogar e abrir a partida com "Você · Meu baralho". **Não verificado:** fotos na grade e na partida (precisa do servidor) e o celular.
+- Testes: `app/test/myCards.test.ts` (coleção, limite de 7, validação de carta de foto).
 
 ## Decidido
 
@@ -104,7 +115,7 @@ Botão voltar do Android durante a partida pede confirmação antes de sair.
 ## A definir
 
 - Biblioteca de navegação e de estado: reavaliar quando entrar câmera e coleção (fase 2).
-- Coleção (listar as cartas criadas) e montar baralho com elas: fases 2/3; hoje a carta criada só aparece no resultado.
+- Baralhos e coleção na nuvem (trocar de celular sem perder): fase 3. Várias listas de baralho salvas: hoje só um ("Meu baralho").
 
 ## Convenções
 
