@@ -10,6 +10,8 @@ Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolhe
 
 **Desistir (2026-11-09):** a partida tem o botão "🏳️ Desistir" ao lado de "Encerrar turno", disponível a qualquer momento (até na vez do bot). Pede confirmação numa janela da própria tela (não usa `Alert.alert`, que não funciona no navegador); ao confirmar, chama `forfeit()` do `useGame`, que manda `{type:'forfeit', player: HUMAN}` ao motor. A tela de resultado mostra "Você desistiu" (conta como derrota) com Revanche, Escolher outro baralho e Menu. A regra mora no motor, a tela só pede. Verificado no navegador (Playwright, 390x844); celular ainda não.
 
+**Fase 4 (partida online 1x1, 2026-11-09):** botão "Jogar online com um amigo" no menu (só com servidor e login), telas `OnlineScreen` (criar partida, entrar com código, continuar a partida em aberto) e `OnlineGameScreen` (espera com o código, partida e fim). Verificado no navegador (Playwright, 2 jogadores em contextos separados, 390x844) contra o **handler e o banco reais** da função `match` por um servidor falso local: criar, entrar, jogar, desistir, estouro de tempo, recarregar e continuar. **Não verificado:** o Supabase de verdade (Realtime, Storage com fotos, função publicada) e o celular. Veja a seção "Fase 4" abaixo e `partidas-online.md`.
+
 Animações continuam fora. A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
 
 ## Fase 2: tela "Criar carta" (PR separado do PR do servidor)
@@ -56,6 +58,28 @@ Tela `MyDeckScreen`: lista as cartas de foto do jogador (lidas da tabela `cards`
 - O `CardView` acha a foto sozinho pelo id da carta (`src/cardPhotos.tsx`, contexto), então `GameScreen` não mudou.
 - Verificado no navegador (Playwright contra `expo start --web`, sem servidor): montar 7 cartas, contador 7/7 e poder 96/110, jogar e abrir a partida com "Você · Meu baralho". **Não verificado:** fotos na grade e na partida (precisa do servidor) e o celular.
 - Testes: `app/test/myCards.test.ts` (coleção, limite de 7, validação de carta de foto).
+
+## Fase 4: partida online 1x1
+
+Contrato e regras (tempo de turno, privacidade da mão, erros) em [`partidas-online.md`](partidas-online.md); aqui só o que é do app.
+
+- **Fluxo:** Menu → "Jogar online com um amigo" (`OnlineScreen`). Quem cria recebe um código de 6 caracteres e fica na espera (`OnlineGameScreen`, modo convite); quem entra digita o código. Se o jogador já tem uma partida em aberto, a tela oferece "Continuar" (e `already_in_match` do servidor leva direto a ela). Os dois precisam ter o baralho de 7 salvo em "Meu baralho" (o servidor lê da nuvem e valida; o app não manda baralho).
+- **A tela só pede e mostra.** `useOnlineMatch(matchId)` guarda a visão que o servidor mandou (`match_views`, só a minha linha) e expõe `act(...)` para `play`, `end`, `forfeit`, `timeout`, `cancel`. As jogadas permitidas vêm prontas em `view.game.legal` (o motor calculou no servidor); a tela não recalcula regra. Cada ação leva a `version` que a tela viu; `stale_state` (duplo toque, tela velha) só atualiza a tela.
+- **Atualização:** Realtime (mudança na minha linha de `match_views`) como caminho principal, mais consulta de reserva a cada 3 s (esperando) ou 5 s (jogando) e ao voltar para o app. Se o Realtime não funcionar no seu projeto, o jogo continua, só com até 5 s de atraso.
+- **Contagem do turno:** `⏱ 0:42` na barra de status, com a diferença de relógio entre servidor e aparelho corrigida (`matchApi.ts`: `clockOffsetMs`, `msLeft`). Quando o prazo do **adversário** vence (mais 1,5 s de tolerância), o app pede `timeout`; o servidor confere e responde. Na minha vez o app nunca pede (quem volta atrasado quer jogar).
+- **Fotos:** a visão traz `photos` (id da carta → caminho); `useMatchPhotos` pede as URLs assinadas e o `CardView` as acha pelo contexto, como na coleção.
+- **Sair da tela não desiste:** a partida continua valendo e o tempo corre; volta-se por "Jogar online" → "Continuar". Para encerrar: "Desistir".
+- Arquivos: `src/matchApi.ts` (chamada HTTP, relógio, texto do desfecho; sem React Native, testado), `src/matchClient.ts`, `src/useOnlineMatch.ts`, `src/useMatchPhotos.ts`, `src/components/Board.tsx` (`PlayerBar` e `Lane`, extraídos da `GameScreen` e usados pelas duas partidas), `src/screens/OnlineScreen.tsx`, `src/screens/OnlineGameScreen.tsx`. `describeEvent` ganhou opções (`foeName`, `endCause`) para falar o nome do adversário e explicar derrota por tempo. Testes: `test/matchApi.test.ts`.
+- Os tipos do contrato vêm de `supabase/src/match/types.ts` por `import type` (só o TypeScript lê; o Metro não precisa).
+
+### Como testar 1x1 sozinho (depois de publicar a migração e a função, `partidas-online.md`)
+
+1. `cd app`, `npx.cmd expo start -c`, tecle `w` (navegador). Entre como convidado ou com conta e monte e salve um baralho de 7 em "Meu baralho".
+2. Abra **uma aba anônima** (ou outro navegador) no mesmo endereço, entre como convidado e monte o baralho de 7 lá também. (Convidado novo só tem as cartas fixas; serve.)
+3. Numa janela: "Jogar online com um amigo" → "Criar partida" → anote o código. Na outra: "Jogar online com um amigo" → digite o código → "Entrar com código". As duas entram na partida.
+4. Jogue: quem tem a vez toca numa carta da mão e numa posição vazia, depois "Encerrar turno". A outra janela atualiza sozinha. Confira que cada janela só mostra a *própria* mão.
+5. Teste o tempo: deixe uma janela parada por 60 s (o turno passa sozinho); duas vezes seguidas = derrota por tempo. Teste "Desistir" e recarregar a página (F5) no meio: "Jogar online" → "Continuar".
+6. No celular: o mesmo, com o Expo Go no celular e o navegador no PC (ou dois celulares).
 
 ## Decidido
 
