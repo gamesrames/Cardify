@@ -31,17 +31,17 @@ Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API 
 
 ## Fase 3: conta e baralho na nuvem
 
-- **Sem sessão** (app novo, outro aparelho, depois de sair): `WelcomeScreen` com "Já tenho conta" (e-mail → código de 6 dígitos) e "Começar como convidado" (login anônimo, como na fase 2). Com sessão guardada, abre direto no menu. Sem servidor configurado (modo offline da fase 1), o app abre no menu e a conta some.
-- **Minha conta** (`AccountScreen`, botão no menu): o convidado cria a conta ligando um e-mail ao **mesmo usuário** (`updateUser({ email })` + código tipo `email_change`), então as cartas ficam. Quem já tem conta edita o nome de jogador e sai. O convidado que quer entrar numa conta antiga recebe o aviso de que as cartas do convidado não vão junto.
+- **Sem sessão** (app novo, outro aparelho, depois de sair): `WelcomeScreen` com "Já tenho conta" (apelido + senha) e "Começar como convidado" (login anônimo, como na fase 2). Com sessão guardada, abre direto no menu. Sem servidor configurado (modo offline da fase 1), o app abre no menu e a conta some.
+- **Minha conta** (`AccountScreen`, botão no menu): o convidado cria a conta com **apelido + senha** (senha repetida duas vezes) e o app a liga ao **mesmo usuário** (`updateUser({ email: fictício })` e depois `updateUser({ password })`), então as cartas ficam. Quem já tem conta vê o apelido, edita o nome de jogador, troca a senha e sai. O convidado que quer entrar numa conta antiga recebe o aviso de que as cartas do convidado não vão junto. **Limites da opção B:** sem recuperação de senha e apelido único por ordem de chegada (`backend.md`).
 - **Baralho na nuvem** (`deckSync.ts`, `MyDeckScreen`): a nuvem manda; se estiver vazia, o baralho do aparelho sobe uma vez (inclusive o da fase 2, que ficava sem dono na chave `v1`). Há cópia local por usuário (`v2.<id>`) para jogar sem internet; sem rede o rodapé avisa e a próxima alteração tenta enviar de novo. Gravações vão numa fila (uma por vez, só a mais nova).
-- Arquivos novos: `src/auth.ts` (chamadas de login), `src/authText.ts` (validação e mensagens em português), `src/useAuth.ts` (estado da sessão), `src/deckSync.ts`, `src/components/EmailCodeForm.tsx`, `src/screens/WelcomeScreen.tsx`, `src/screens/AccountScreen.tsx`. Testes: `test/deckSync.test.ts`, `test/authText.test.ts`.
-- Pré-requisitos no painel do Supabase (SMTP e modelos de e-mail): `backend.md`, "Como publicar a fase 3".
+- Arquivos novos: `src/auth.ts` (única porta para o login; trocar o método = trocar este arquivo e os formulários), `src/authText.ts` (apelido, e-mail fictício e mensagens em português), `src/useAuth.ts` (estado da sessão), `src/deckSync.ts`, `src/components/CredentialsForm.tsx`, `src/screens/WelcomeScreen.tsx`, `src/screens/AccountScreen.tsx`. Testes: `test/deckSync.test.ts`, `test/authText.test.ts`.
+- Pré-requisitos no painel do Supabase (aplicar a migração e desligar "Confirm email"): `backend.md`, "Como publicar a fase 3". Opcional no `.env.local`: `EXPO_PUBLIC_LOGIN_EMAIL_DOMAIN`.
 
-### Como testar a conta (depois de configurar o SMTP e aplicar a migração)
+### Como testar a conta (depois de aplicar a migração e desligar "Confirm email")
 
-1. App aberto com a sessão de convidado que já tem as suas cartas → **Convidado · criar conta** → e-mail → digite o código que chegou. As cartas continuam em "Meu baralho".
+1. App aberto com a sessão de convidado que já tem as suas cartas → **Convidado · criar conta** → apelido e senha (anote a senha!). O botão do menu passa a mostrar "Conta: seu_apelido" e as cartas continuam em "Meu baralho". **Este é o teste que ainda não foi feito**: se der erro, a mensagem na tela diz a causa (Confirm email ligado, domínio recusado...).
 2. Monte o baralho de 7 e confira "Salvo na nuvem".
-3. Outro aparelho (ou navegador limpo / app reinstalado): **Já tenho conta** → mesmo e-mail → código → "Meu baralho" mostra as mesmas cartas, com fotos, e o mesmo baralho.
+3. Outro aparelho (ou navegador limpo / app reinstalado): **Já tenho conta** → mesmo apelido e senha → "Meu baralho" mostra as mesmas cartas, com fotos, e o mesmo baralho.
 4. Sair da conta volta às boas-vindas. Teste também com o Wi-Fi desligado: o baralho local abre e o rodapé avisa que está sem conexão.
 
 ### Meu baralho (coleção + montar baralho)

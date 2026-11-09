@@ -1,38 +1,61 @@
-// Login por e-mail com código de 6 dígitos (sem senha, sem link: funciona no Expo Go e no navegador).
-// O convidado (login anônimo) vira conta de verdade ligando um e-mail ao MESMO usuário: o id não muda,
-// então as cartas, o baralho e o perfil dele continuam dele.
+// Login por apelido + senha (opção B da fase 3; decisões.md). Tudo que fala com o login do Supabase está AQUI:
+// para voltar ao e-mail de verdade (código por e-mail, Google...) no lançamento, troque este arquivo e os
+// formulários, sem mexer em cartas, baralho nem perfil.
+//
+// O convidado (login anônimo) vira conta ligando um e-mail fictício e uma senha ao MESMO usuário: o id não
+// muda, então as cartas, o baralho e o perfil dele continuam dele.
 import type { Session } from '@supabase/supabase-js';
-import { describeAuthError } from './authText';
+import { DEFAULT_LOGIN_DOMAIN, describeAuthError, handleToEmail, normalizeHandle } from './authText';
 import type { AuthContext } from './authText';
-import { requireClient } from './supabase';
+import { requireClient, saveDisplayName } from './supabase';
 
 export class AuthFlowError extends Error {}
+
+const loginDomain = process.env.EXPO_PUBLIC_LOGIN_EMAIL_DOMAIN || DEFAULT_LOGIN_DOMAIN;
 
 function fail(error: { code?: string; message?: string; status?: number }, context: AuthContext): never {
   throw new AuthFlowError(describeAuthError(error, context));
 }
 
-/** Convidado → conta: envia o código para o e-mail (template "Change Email Address" do Supabase). */
-export async function sendUpgradeCode(email: string): Promise<void> {
-  const { error } = await requireClient().auth.updateUser({ email });
-  if (error) fail(error, 'upgrade');
-}
+/**
+ * Convidado → conta. Dois passos (o Supabase só aceita senha depois que o e-mail está confirmado):
+ * 1) liga o e-mail fictício; 2) define a senha. Se o passo 2 falhar, repetir o pedido continua de onde parou.
+ */
+export async function createAccount(handle: string, password: string): Promise<void> {
+  const auth = requireClient().auth;
+  const email = handleToEmail(handle, loginDomain);
 
-export async function confirmUpgradeCode(email: string, code: string): Promise<void> {
-  const { error } = await requireClient().auth.verifyOtp({ email, token: code, type: 'email_change' });
-  if (error) fail(error, 'verify');
+  const { data: current } = await auth.getUser();
+  if (current.user?.email !== email) {
+    const { data, error } = await auth.updateUser({ email });
+    if (error) fail(error, 'create');
+    if (data.user?.email !== email) {
+      // "Confirm email" ainda ligado no painel: o servidor tentou mandar um e-mail e a conta continua de convidado.
+      throw new AuthFlowError(
+        'O servidor ainda exige confirmar e-mail. No painel do Supabase, desligue Authentication → Sign In / Providers → Email → "Confirm email".',
+      );
+    }
+  }
+  const { error: passwordError } = await auth.updateUser({ password });
+  if (passwordError) fail(passwordError, 'create');
+
+  // O apelido vira o nome de jogador inicial (dá para mudar depois). Falhar aqui não atrapalha a conta.
+  await saveDisplayName(normalizeHandle(handle)).catch(() => undefined);
 }
 
 /** Entrar numa conta que já existe (outro aparelho, app reinstalado). Não cria conta nova. */
-export async function sendSignInCode(email: string): Promise<void> {
-  const { error } = await requireClient().auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-  if (error) fail(error, 'signin');
+export async function signIn(handle: string, password: string): Promise<Session> {
+  const { data, error } = await requireClient().auth.signInWithPassword({
+    email: handleToEmail(handle, loginDomain),
+    password,
+  });
+  if (error || !data.session) fail(error ?? { code: 'invalid_credentials' }, 'signin');
+  return data.session;
 }
 
-export async function confirmSignInCode(email: string, code: string): Promise<Session> {
-  const { data, error } = await requireClient().auth.verifyOtp({ email, token: code, type: 'email' });
-  if (error || !data.session) fail(error ?? { code: 'otp_expired' }, 'verify');
-  return data.session;
+export async function changePassword(password: string): Promise<void> {
+  const { error } = await requireClient().auth.updateUser({ password });
+  if (error) fail(error, 'password');
 }
 
 export async function signOut(): Promise<void> {

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { confirmUpgradeCode, sendUpgradeCode, signOut } from '../auth';
+import { changePassword, createAccount, signOut } from '../auth';
+import { emailToHandle } from '../authText';
 import { Button } from '../components/Button';
-import { EmailCodeForm } from '../components/EmailCodeForm';
+import { CredentialsForm } from '../components/CredentialsForm';
 import { MAX_APP_WIDTH } from '../layout';
 import { fetchDisplayName, saveDisplayName } from '../supabase';
 import { colors } from '../theme';
@@ -25,7 +26,7 @@ export function AccountScreen({ user, onBack }: Props) {
   );
 }
 
-/** Convidado: o e-mail vira conta mantendo o mesmo jogador (cartas e baralho ficam). */
+/** Convidado: apelido + senha viram conta mantendo o mesmo jogador (cartas e baralho ficam). */
 function GuestSection() {
   const [leaving, setLeaving] = useState(false);
 
@@ -35,10 +36,13 @@ function GuestSection() {
         Você está como <Text style={styles.bold}>convidado</Text>. Suas cartas ficam só neste aparelho: se desinstalar o
         app, elas se perdem. Crie uma conta para guardá-las e entrar de qualquer aparelho.
       </Text>
-      <EmailCodeForm
-        sendLabel="Criar conta com e-mail"
-        sendCode={sendUpgradeCode}
-        verifyCode={confirmUpgradeCode}
+      <Text style={styles.warn}>
+        Atenção: não existe recuperação de senha e o apelido é de quem pegar primeiro. Anote a senha.
+      </Text>
+      <CredentialsForm
+        submitLabel="Criar conta"
+        repeatPassword
+        onSubmit={createAccount}
         // useAuth percebe a conta nova e a tela passa a mostrar a seção "conta".
         onDone={() => undefined}
       />
@@ -63,6 +67,7 @@ function AccountSection({ user }: { user: AuthUser }) {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -93,8 +98,8 @@ function AccountSection({ user }: { user: AuthUser }) {
   return (
     <>
       <Text style={styles.text}>
-        Conta <Text style={styles.bold}>{user.email}</Text>. Suas cartas e o seu baralho ficam guardados nela: para
-        jogar em outro aparelho, toque em "Já tenho conta" e use esse e-mail.
+        Conta <Text style={styles.bold}>{emailToHandle(user.email) ?? user.email}</Text>. Suas cartas e o seu baralho
+        ficam guardados nela: em outro aparelho, toque em "Já tenho conta" e entre com esse apelido e a senha.
       </Text>
       <View style={styles.box}>
         <Text style={styles.label}>Nome de jogador (2 a 20 letras)</Text>
@@ -110,6 +115,14 @@ function AccountSection({ user }: { user: AuthUser }) {
         {message && <Text style={message.ok ? styles.ok : styles.error}>{message.text}</Text>}
       </View>
       <View style={styles.divider} />
+      {changingPassword ? (
+        <View style={styles.box}>
+          <CredentialsForm passwordOnly submitLabel="Trocar senha" onSubmit={(_handle, password) => changePassword(password)} onDone={() => setChangingPassword(false)} />
+          <Button label="Cancelar" variant="secondary" onPress={() => setChangingPassword(false)} />
+        </View>
+      ) : (
+        <Button label="Trocar senha" variant="secondary" onPress={() => setChangingPassword(true)} />
+      )}
       <Button label="Sair da conta" variant="secondary" onPress={() => void signOut()} />
     </>
   );

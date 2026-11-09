@@ -21,7 +21,12 @@ export function useAuth(): AuthState {
     let active = true;
     const toState = (session: { user: { id: string; email?: string; is_anonymous?: boolean } } | null): AuthState =>
       session
-        ? { status: 'in', user: { id: session.user.id, email: session.user.email || null, isAnonymous: session.user.is_anonymous === true } }
+        ? {
+            status: 'in',
+            // Convidado = login anônimo SEM e-mail. (Depois de criar a conta o e-mail existe, mesmo que o
+            // servidor demore a trocar a marca `is_anonymous`.)
+            user: { id: session.user.id, email: session.user.email || null, isAnonymous: session.user.is_anonymous === true && !session.user.email },
+          }
         : { status: 'out' };
 
     void getStoredSession().then((session) => active && setState(toState(session)));

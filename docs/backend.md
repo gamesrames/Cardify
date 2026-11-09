@@ -39,14 +39,23 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 - `profiles(id, display_name, created_at, updated_at)`: criado por trigger em cada login novo (e para quem já existia). O cliente lê o próprio e edita só `display_name` (2 a 20 letras; `grant update (display_name)`). Na fase 4 uma policy nova deixa o adversário ler o nome durante a partida.
 - `decks(id, owner_id, name, card_ids text[], ...)`, `unique (owner_id, name)`: o app usa um baralho chamado "Meu baralho" (o esquema aceita vários). `card_ids` mistura ids de cartas fixas (texto do motor) e de foto (uuid). O dono faz CRUD só nos próprios (RLS). **O banco não valida se o baralho é legal** (7 cartas, teto de poder, posse das cartas): isso é do motor, no servidor, ao iniciar a partida (fase 4). Só há um limite de higiene de 20 ids.
 - Reforço nas tabelas da fase 2: tirada a permissão de escrita de `anon` e `authenticated` em `cards` e `categories`, e todo acesso a `app_config` (além da RLS).
-- Login: **e-mail + código de 6 dígitos** (sem senha, sem link) e convidado por login anônimo. Decisão e alternativas em `decisoes.md`.
+- Login (opção B, 2026-11-09): **apelido + senha**, sem e-mail de verdade. Por baixo o Supabase recebe um e-mail fictício `cardify.<apelido>@<domínio>` (`app/src/authText.ts`; domínio padrão `gmail.com`, troque com `EXPO_PUBLIC_LOGIN_EMAIL_DOMAIN` se o servidor recusar). Nada é enviado a esse endereço, porque o app não usa confirmação nem recuperação de senha. Convidado (login anônimo) continua existindo. Para voltar a e-mail de verdade no lançamento, só `app/src/auth.ts` e os formulários mudam. Decisão e alternativas em `decisoes.md`.
 
-## Como publicar a fase 3 (passos do usuário no painel; o que for SQL pode ser aplicado por nós)
+## Como publicar a fase 3 (passos do usuário no painel)
 
-1. **SMTP próprio** (Authentication → Emails → SMTP Settings). O e-mail embutido do Supabase só envia para membros da organização, então os amigos não receberiam o código. Opção grátis: Brevo (300 e-mails/dia). A senha do SMTP fica só no painel, nunca no repositório nem em mensagens.
-2. **Modelos de e-mail** (Authentication → Emails → Templates): em **Magic Link** e em **Change Email Address**, troque o link pelo código: `<h2>Seu código do Cardify</h2><p>Digite no app: <b>{{ .Token }}</b></p>`.
-3. Aplicar a migração `20261109000001_perfis_e_baralhos.sql` (SQL Editor do painel, ou pedir para a thread aplicar pelo MCP depois de liberar).
-4. Conferir **Allow anonymous sign-ins** ligado (já estava, da fase 2).
+1. **Aplicar a migração** `supabase/migrations/20261109000001_perfis_e_baralhos.sql`: abra o painel → **SQL Editor** → New query → cole o conteúdo do arquivo inteiro → Run. (Ou libere a thread para aplicar pelo MCP.) Depois confira em Table Editor que existem `profiles` e `decks`.
+2. **Desligar "Confirm email"**: Authentication → Sign In / Providers → Email → desmarque **Confirm email** → Save. Sem isso o Supabase tenta mandar um e-mail de confirmação para o endereço fictício, a conta fica como convidado e o app avisa o motivo. Não precisa de SMTP nem de modelos de e-mail.
+3. Conferir **Allow anonymous sign-ins** ligado (já estava, da fase 2).
+
+### Limites do login por apelido (B)
+
+- **Sem recuperação de senha.** Quem esquecer perde a conta, a não ser que quem cuida do projeto redefina no SQL Editor: `update auth.users set encrypted_password = crypt('NOVA_SENHA', gen_salt('bf')) where email = 'cardify.APELIDO@gmail.com';` (troque o domínio se mudou `EXPO_PUBLIC_LOGIN_EMAIL_DOMAIN`).
+- **Apelido único, por ordem de chegada.** Qualquer um cria "joao" antes do João; não há como provar quem é dono do nome. Serve para amigos próximos, não para lançamento aberto.
+- Qualquer um que chame a API direto pode pedir recuperação de senha para o e-mail fictício (cairia no domínio configurado). O app nunca faz isso; é um risco aceito no protótipo.
+
+### Ainda não verificado (o ambiente de desenvolvimento não alcança o Supabase)
+
+O upgrade do convidado para apelido + senha mantendo o **mesmo id** (e portanto as cartas) depende do comportamento do Supabase com "Confirm email" desligado: o app liga o e-mail fictício com `updateUser({ email })`, confere que ele foi aplicado e só então define a senha. Se o servidor recusar (por exemplo `email_address_invalid` no domínio), o app mostra a causa. **Plano B se esse caminho falhar:** uma Edge Function `create-account` que usa a chave de serviço (`auth.admin.updateUserById(id, { email, password, email_confirm: true })`), que não depende da confirmação nem do domínio. O primeiro teste real é o roteiro em `app.md`.
 
 ## Contrato da função `create-card` (app ↔ servidor)
 

@@ -6,6 +6,7 @@ import { PREBUILT_DECKS } from './src/motor';
 import type { CardDef } from './src/motor';
 import { CardPhotosProvider } from './src/cardPhotos';
 import { CUSTOM_DECK_NAME, setCustomDeck } from './src/customDeck';
+import { emailToHandle } from './src/authText';
 import { useAuth } from './src/useAuth';
 import { AccountScreen } from './src/screens/AccountScreen';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
@@ -111,7 +112,7 @@ export default function App() {
                 onCreateCard={() => setScreen({ name: 'create' })}
                 onMyDeck={() => setScreen({ name: 'mydeck' })}
                 onAccount={user ? () => setScreen({ name: 'account' }) : undefined}
-                accountLabel={user ? (user.isAnonymous ? 'Convidado · criar conta' : (user.email ?? 'Minha conta')) : undefined}
+                accountLabel={user ? (user.isAnonymous ? 'Convidado · criar conta' : `Conta: ${emailToHandle(user.email) ?? user.email ?? 'minha conta'}`) : undefined}
               />
             ) : (
               <DeckPickScreen onStart={startGame} onBack={() => setScreen({ name: 'home' })} />

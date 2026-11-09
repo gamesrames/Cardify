@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { confirmSignInCode, sendSignInCode } from '../auth';
+import { signIn } from '../auth';
 import { Button } from '../components/Button';
-import { EmailCodeForm } from '../components/EmailCodeForm';
+import { CredentialsForm } from '../components/CredentialsForm';
 import { MAX_APP_WIDTH } from '../layout';
 import { startGuestSession } from '../supabase';
 import { colors } from '../theme';
@@ -44,13 +44,9 @@ export function WelcomeScreen() {
           </>
         ) : (
           <>
-            <Text style={styles.text}>Vamos mandar um código para o e-mail da sua conta. Sem senha.</Text>
-            <EmailCodeForm
-              sendLabel="Enviar código"
-              sendCode={sendSignInCode}
-              verifyCode={async (email, code) => void (await confirmSignInCode(email, code))}
-              onDone={() => undefined}
-            />
+            <Text style={styles.text}>Entre com o apelido e a senha da sua conta.</Text>
+            {/* Quando o login der certo, useAuth percebe a sessão e o App troca de tela sozinho. */}
+            <CredentialsForm submitLabel="Entrar" onSubmit={async (handle, password) => void (await signIn(handle, password))} onDone={() => undefined} />
             <Button label="Voltar" variant="secondary" onPress={() => setMode('choice')} />
           </>
         )}
