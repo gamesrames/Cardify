@@ -39,6 +39,8 @@ export function useGame(playerDeckName: string, botDeckName: string, seed: numbe
 
   const dispatch = useCallback((action: Action) => {
     setGame((prev) => {
+      // Partida já acabou (ex.: o jogador desistiu enquanto um timer do bot estava pendente): ignora.
+      if (prev.state.winner !== null) return prev;
       const result = applyAction(prev.state, action);
       return {
         state: result.state,
@@ -61,5 +63,7 @@ export function useGame(playerDeckName: string, botDeckName: string, seed: numbe
     isHumanTurn: state.winner === null && state.active === HUMAN,
     play: (handIndex: number, slot: number) => dispatch({ type: 'play', handIndex, slot }),
     endTurn: () => dispatch({ type: 'end' }),
+    /** Desistir vale em qualquer momento, até na vez do bot. A regra (derrota do humano) vive no motor. */
+    forfeit: () => dispatch({ type: 'forfeit', player: HUMAN }),
   };
 }

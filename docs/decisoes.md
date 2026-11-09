@@ -68,6 +68,12 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | `profiles` (nome de exibição) e `decks` (`card_ids text[]`, único por dono e nome) com RLS por dono; o banco não valida a legalidade do baralho, o motor valida ao iniciar a partida (fase 4). | O servidor decide a regra, uma vez só, no lugar certo; a fase 4 não precisa de mudança de esquema. | Backend |
 | Quem entra numa conta existente deixa o convidado para trás (sem fundir cartas). | Fundir exige regras de cota diária e duplicatas; fica fora do protótipo. A tela avisa. | App |
 
+## 2026-11-09 (desistência)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| **Desistir é uma ação do motor**, `{ type: 'forfeit', player }`: termina a partida na hora, o adversário vence, `endReason: 'forfeit'`. Vale a qualquer momento e para qualquer jogador; não entra em `legalActions`. Todo fim de jogo agora tem motivo (`hp_zero`, `turn_limit`, `forfeit`). No app, botão "Desistir" com confirmação na tela de partida. | Testar sem jogar 25+ turnos, e o 1x1 online da fase 4 precisa da mesma regra no servidor (quem desiste fora da vez, quem some). Sem mexer em balanceamento. | Motor / App |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).

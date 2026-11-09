@@ -195,3 +195,70 @@ describe('partida', () => {
     }
   });
 });
+
+describe('desistência', () => {
+  const deckA = getCards(PREBUILT_DECKS['Brasa e Ferro']!);
+  const deckB = getCards(PREBUILT_DECKS['Maré Alta']!);
+
+  it('o adversário vence na hora, com motivo "forfeit" e evento game_over', () => {
+    const { state } = createGame(deckA, deckB, 7);
+    const r = applyAction(state, { type: 'forfeit', player: 0 });
+    expect(r.state.winner).toBe(1);
+    expect(r.state.endReason).toBe('forfeit');
+    expect(r.events).toEqual([{ type: 'game_over', winner: 1, reason: 'forfeit' }]);
+    const r2 = applyAction(state, { type: 'forfeit', player: 1 });
+    expect(r2.state.winner).toBe(0);
+  });
+
+  it('vale também fora da vez do jogador (necessário no 1x1 online)', () => {
+    const { state } = createGame(deckA, deckB, 7);
+    const idle = state.active === 0 ? 1 : 0;
+    const r = applyAction(state, { type: 'forfeit', player: idle });
+    expect(r.state.winner).toBe(state.active);
+  });
+
+  it('vale no meio da partida, sem alterar vida, campo nem mãos', () => {
+    let s = createGame(deckA, deckB, 5).state;
+    s = applyAction(s, legalActions(s).find((a) => a.type === 'play')!).state;
+    s = applyAction(s, { type: 'end' }).state;
+    const after = applyAction(s, { type: 'forfeit', player: 0 }).state;
+    expect(after.players).toEqual(s.players);
+    expect(after.turn).toBe(s.turn);
+    expect(after.winner).toBe(1);
+  });
+
+  it('depois de desistir não há mais ações legais e nada mais é aceito', () => {
+    const { state } = createGame(deckA, deckB, 7);
+    const over = applyAction(state, { type: 'forfeit', player: 0 }).state;
+    expect(legalActions(over)).toEqual([]);
+    expect(() => applyAction(over, { type: 'end' })).toThrow();
+    expect(() => applyAction(over, { type: 'forfeit', player: 1 })).toThrow(/já terminou/);
+  });
+
+  it('não permite desistir de partida que já acabou por vida zerada', () => {
+    const end = playOut(createGame(deckA, deckB, 3).state);
+    expect(() => applyAction(end, { type: 'forfeit', player: 0 })).toThrow();
+  });
+
+  it('não altera o estado anterior e recusa jogador inválido', () => {
+    const { state } = createGame(deckA, deckB, 7);
+    const snapshot = structuredClone(state);
+    applyAction(state, { type: 'forfeit', player: 0 });
+    expect(state).toEqual(snapshot);
+    expect(() => applyAction(state, { type: 'forfeit', player: 2 as 0 })).toThrow();
+  });
+
+  it('partidas normais registram o motivo: vida zerada ou limite de turnos', () => {
+    const reasons = new Set<string | null>();
+    for (let seed = 1; seed <= 50; seed++) reasons.add(playOut(createGame(deckA, deckB, seed).state).endReason);
+    expect(reasons.has(null)).toBe(false);
+    expect(reasons.has('forfeit')).toBe(false);
+    const rules = { ...DEFAULT_RULES, maxTurns: 2 };
+    const capped = playOut(createGame(deckA, deckB, 1, rules).state);
+    expect(capped.endReason).toBe('turn_limit');
+  });
+
+  it('createGame começa sem motivo de fim', () => {
+    expect(createGame(deckA, deckB, 7).state.endReason).toBeNull();
+  });
+});

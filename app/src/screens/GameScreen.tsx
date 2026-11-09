@@ -25,13 +25,16 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
   const cardWidth = cardWidthFor(window.width, window.height, insets.top + insets.bottom);
-  const { state, log, isHumanTurn, play, endTurn } = useGame(playerDeckName, botDeckName, seed);
+  const { state, log, isHumanTurn, play, endTurn, forfeit } = useGame(playerDeckName, botDeckName, seed);
   const [selected, setSelected] = useState<number | null>(null);
+  // Confirmação de "Desistir" feita na própria tela (Alert.alert não funciona no navegador).
+  const [confirmingForfeit, setConfirmingForfeit] = useState(false);
   const logRef = useRef<ScrollViewInstance>(null);
 
   const me = state.players[HUMAN];
   const foe = state.players[BOT];
   const finished = state.winner !== null;
+  const forfeited = state.endReason === 'forfeit';
 
   // Jogadas permitidas vêm do motor. A tela nunca decide sozinha o que é legal.
   const plays = isHumanTurn ? legalActions(state).filter((a): a is PlayAction => a.type === 'play') : [];
@@ -68,6 +71,12 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
     if (selected === null || !playableSlots.has(slot)) return;
     play(selected, slot);
     setSelected(null);
+  }
+
+  function handleForfeit() {
+    setConfirmingForfeit(false);
+    setSelected(null);
+    forfeit();
   }
 
   function handleEndTurn() {
@@ -119,7 +128,18 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
       </View>
 
       <View style={styles.actions}>
-        <Button label="Encerrar turno" disabled={!isHumanTurn} onPress={handleEndTurn} />
+        <View style={styles.endTurn}>
+          <Button label="Encerrar turno" disabled={!isHumanTurn} onPress={handleEndTurn} />
+        </View>
+        <Pressable
+          style={styles.forfeit}
+          onPress={() => setConfirmingForfeit(true)}
+          disabled={finished}
+          accessibilityRole="button"
+          accessibilityLabel="Desistir da partida"
+        >
+          <Text style={styles.forfeitText}>🏳️ Desistir</Text>
+        </Pressable>
       </View>
 
       <ScrollView ref={logRef} style={styles.log} contentContainerStyle={{ padding: 8 }}>
@@ -132,12 +152,30 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
 
       </View>
 
+      {confirmingForfeit && !finished && (
+        <View style={styles.overlay}>
+          <View style={styles.resultBox}>
+            <Text style={styles.resultTitle}>Desistir?</Text>
+            <Text style={styles.resultInfo}>A partida termina agora e conta como derrota.</Text>
+            <Button label="Desistir" onPress={handleForfeit} />
+            <Button label="Continuar jogando" variant="secondary" onPress={() => setConfirmingForfeit(false)} />
+          </View>
+        </View>
+      )}
+
       {finished && (
         <View style={styles.overlay}>
           <View style={styles.resultBox}>
             <Text style={styles.resultTitle}>
-              {state.winner === 'draw' ? 'Empate' : state.winner === HUMAN ? '🏆 Você venceu!' : '💀 O bot venceu'}
+              {forfeited
+                ? '🏳️ Você desistiu'
+                : state.winner === 'draw'
+                  ? 'Empate'
+                  : state.winner === HUMAN
+                    ? '🏆 Você venceu!'
+                    : '💀 O bot venceu'}
             </Text>
+            {forfeited && <Text style={styles.resultInfo}>Desistência conta como derrota.</Text>}
             <Text style={styles.resultInfo}>
               Vida final: você {Math.max(0, me.hp)} · bot {Math.max(0, foe.hp)} · {state.turn} turnos
             </Text>
@@ -239,7 +277,11 @@ const styles = StyleSheet.create({
   turn: { color: colors.warn, fontSize: 13, fontWeight: '800' },
   status: { flex: 1, color: colors.text, fontSize: 13 },
   hand: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8, justifyContent: 'center' },
-  actions: { paddingHorizontal: 12, paddingVertical: 8 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  endTurn: { flex: 1 },
+  // Discreto de propósito: não é o botão principal e fica longe de "Encerrar turno" para evitar toque acidental.
+  forfeit: { paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  forfeitText: { color: colors.textDim, fontSize: 14, fontWeight: '600' },
   log: { flex: 1, minHeight: 60, backgroundColor: colors.panel, marginHorizontal: 12, borderRadius: 8 },
   logLine: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
   overlay: {
