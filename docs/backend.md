@@ -1,12 +1,12 @@
 # Backend (Supabase)
 
-Pasta: `supabase/`. Dono: thread de backend. Fase 2 concluída; fase 3 (contas e nuvem) em andamento.
+Pasta: `supabase/`. Dono: thread de backend. Fases 2 e 3 concluídas no navegador (celular físico pendente); fase 4 (partidas online) é a próxima.
 
 ## Estado atual
 
 Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (plano grátis, região São Paulo, criado em 2026-11-08): as duas migrações estão aplicadas e a função `create-card` está no ar na **versão 6 com o Gemini ligado** (segredos `GEMINI_API_KEY` e `CLASSIFIER=gemini`, salvos pelo usuário; modelo padrão `gemini-flash-lite-latest`). Já foi chamada de verdade pelo app no navegador (login anônimo ligado, carta e foto gravadas no banco e no Storage, categoria detectada pelo Gemini). **Ainda não testada a partir de um celular.** O ambiente de desenvolvimento não alcança `supabase.co`; testes reais só pelo usuário ou pelo MCP do Supabase. Se o Gemini falhar, a função devolve 502 sem registrar a causa (melhoria possível: `console.error` da mensagem do `ClassifierError`). Existem: migrações (`categories`, `app_config`, `cards`, funções `photo_check` e `insert_card`, bucket `card-photos`), a Edge Function `create-card` e 39 testes (Vitest; o banco dos testes é o PGlite, um Postgres em memória que roda a migração de verdade). Não existem ainda: `profiles`, decks, partidas (fases 3 e 4).
 
-**Fase 3 (escrita e testada no computador, PR #11):** migração `20261109000001_perfis_e_baralhos.sql` com `profiles` e `decks` (RLS por dono, 14 testes pelos papéis `authenticated` e `anon` em `test/contas.test.ts`). **A migração ainda não foi aplicada no projeto real** (a aplicação pelo MCP foi negada; veja "Como publicar a fase 3"). Não existem ainda: partidas (fase 4).
+**Fase 3 (no `main`, PR #11):** migração `20261109000001_perfis_e_baralhos.sql` com `profiles` e `decks` (RLS por dono, 14 testes pelos papéis `authenticated` e `anon` em `test/contas.test.ts`). **Migração aplicada no projeto real pelo usuário em 2026-11-09** (SQL Editor, "Success. No rows returned") e "Confirm email" desligado. **Conta criada de verdade** a partir do convidado: conferido no banco que o usuário continua com o **mesmo id**, `is_anonymous = false`, e-mail fictício gravado, **2 cartas** e `display_name` igual ao apelido. Baralho "Meu baralho" com 7 cartas (uma delas de foto) **salvo na nuvem** (conferido na tabela `decks`). Entrar de novo e em outra aba anônima também foi testado (ver "Verificado e pendente"). Não existem ainda: partidas (fase 4).
 
 ## Decidido
 
@@ -53,9 +53,12 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 - **Apelido único, por ordem de chegada.** Qualquer um cria "joao" antes do João; não há como provar quem é dono do nome. Serve para amigos próximos, não para lançamento aberto.
 - Qualquer um que chame a API direto pode pedir recuperação de senha para o e-mail fictício (cairia no domínio configurado). O app nunca faz isso; é um risco aceito no protótipo.
 
-### Ainda não verificado (o ambiente de desenvolvimento não alcança o Supabase)
+### Verificado e pendente
 
-O upgrade do convidado para apelido + senha mantendo o **mesmo id** (e portanto as cartas) depende do comportamento do Supabase com "Confirm email" desligado: o app liga o e-mail fictício com `updateUser({ email })`, confere que ele foi aplicado e só então define a senha. Se o servidor recusar (por exemplo `email_address_invalid` no domínio), o app mostra a causa. **Plano B se esse caminho falhar:** uma Edge Function `create-account` que usa a chave de serviço (`auth.admin.updateUserById(id, { email, password, email_confirm: true })`), que não depende da confirmação nem do domínio. O primeiro teste real é o roteiro em `app.md`.
+- **Verificado (2026-11-09, projeto real):** o upgrade do convidado para apelido + senha com "Confirm email" desligado funciona, mantém o mesmo id e as cartas. O plano B (Edge Function `create-account` com `auth.admin.updateUserById`) **não é necessário**.
+- **Verificado:** o baralho de 7 sobe para a nuvem (linha em `decks`, `updated_at` de 2026-11-09).
+- **Verificado pelo usuário no navegador (2026-11-09):** sair e entrar de novo e entrar numa aba anônima mostram as mesmas cartas, fotos e baralho. O banco confirma: um novo login às 21:39 UTC, 2 sessões e ainda **1 só usuário** (nenhuma conta duplicada).
+- **Pendente:** teste em **celular físico** (iPhone e Poco); nada da fase 3 foi testado em aparelho. O login por apelido + senha é **provisório** (protótipo): para o lançamento, trocar por e-mail de verdade só em `app/src/auth.ts`.
 
 ## Contrato da função `create-card` (app ↔ servidor)
 

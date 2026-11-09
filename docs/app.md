@@ -6,7 +6,7 @@ Pasta: `app/`. Dono: thread do app. Para o contrato com o motor, leia só a seç
 
 Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolher baralho → partida contra o bot → resultado com revanche. Verificado sem celular: checagem de tipos, empacotamento do Metro (Android) e 200 partidas completas rodando o mesmo caminho de código das telas. **Ainda não testado em aparelho**: esse é o critério de "pronto" e depende do usuário (passo a passo abaixo).
 
-**Fase 3 (contas e nuvem) escrita e testada sem celular** (testes do `app/`, tipos, empacotamento web e a tela de boas-vindas vista no navegador; o envio do código e a conta real **não** foram exercitados porque o ambiente não alcança o Supabase). Veja a seção "Fase 3" abaixo.
+**Fase 3 (contas e nuvem) no `main`.** Testes do `app/`, tipos e empacotamento web ok. **Testado pelo usuário no navegador (2026-11-09):** criar conta a partir do convidado (as 2 cartas continuam no mesmo usuário, conferido no banco) e abrir uma partida; baralho de 7 com as fotos e aviso "Salvo na nuvem" (linha criada em `decks`). Também testado no navegador: sair e entrar de novo e entrar numa aba anônima (mesmas cartas, fotos e baralho). **Ainda não testado:** celular físico (iPhone e Poco). Veja a seção "Fase 3" abaixo.
 
 Animações continuam fora. A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
 
@@ -39,7 +39,7 @@ Escrita e verificada sem celular: checagem de tipos, 7 testes do cliente da API 
 
 ### Como testar a conta (depois de aplicar a migração e desligar "Confirm email")
 
-1. App aberto com a sessão de convidado que já tem as suas cartas → **Convidado · criar conta** → apelido e senha (anote a senha!). O botão do menu passa a mostrar "Conta: seu_apelido" e as cartas continuam em "Meu baralho". **Este é o teste que ainda não foi feito**: se der erro, a mensagem na tela diz a causa (Confirm email ligado, domínio recusado...).
+1. App aberto com a sessão de convidado que já tem as suas cartas → **Convidado · criar conta** → apelido e senha (anote a senha!). O botão do menu passa a mostrar "Conta: seu_apelido" e as cartas continuam em "Meu baralho". *(Feito pelo usuário em 2026-11-09 no navegador; se der erro, a mensagem na tela diz a causa: Confirm email ligado, domínio recusado...)*
 2. Monte o baralho de 7 e confira "Salvo na nuvem".
 3. Outro aparelho (ou navegador limpo / app reinstalado): **Já tenho conta** → mesmo apelido e senha → "Meu baralho" mostra as mesmas cartas, com fotos, e o mesmo baralho.
 4. Sair da conta volta às boas-vindas. Teste também com o Wi-Fi desligado: o baralho local abre e o rodapé avisa que está sem conexão.
