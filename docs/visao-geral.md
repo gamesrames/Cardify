@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-Fases 1 e 2 no `main` (motor, app Expo, foto vira carta, "Meu baralho"). **Fase 3 (contas e nuvem) em andamento**: migração, app e testes escritos; falta o usuário configurar o SMTP no Supabase e aplicar a migração, e testar a conta em aparelho. Critério de pronto da fase 3 na tabela abaixo (detalhado em `backend.md`).
+Fases 1 e 2 no `main` (motor, app Expo, foto vira carta, "Meu baralho"). **Fase 3 (contas e nuvem) pronta no navegador** (2026-11-09): conta criada a partir do convidado mantendo as cartas, baralho na nuvem, entrar de novo e em aba anônima mostram a mesma coleção. **Celular físico ainda pendente** (fases 1 a 3) e o login por apelido + senha é provisório. Próxima: fase 4 (PvP online). Critério de pronto da fase 3 na tabela abaixo (detalhado em `backend.md`).
 
 ## O produto
 
