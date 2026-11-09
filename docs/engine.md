@@ -8,6 +8,8 @@ Motor no `main` desde o **PR #1**: 30 cartas, validação de baralho, 5 baralhos
 
 **Bônus de foto e melhorias na validação:** `validateDeck` não compara mais o poder da carta com o orçamento da raridade, e sim com o **teto da carta** = orçamento + bônus de foto (10%, mínimo +1) + melhoria (25%), calculado por `maxCardPower(rarity, rules)` (`photoBonusCap` e `upgradeCap` dão as partes). Isso deixa cartas com bônus de categoria, e depois melhoradas, entrarem no baralho. O limite de 110 do baralho continua contando o poder real de cada carta (`deckPower`). As frações ficam em `Rules` (`photoBonusRatio`, `upgradeRatio`).
 
+**Desistência (2026-11-09):** nova ação `{ type: 'forfeit', player }`. Termina a partida na hora com o adversário como vencedor. Vale a qualquer momento e para qualquer jogador (inclusive fora da vez, que é o caso do 1x1 online), por isso carrega o `player` e **não** aparece em `legalActions` (que lista só as ações do jogador ativo); `applyAction` a trata antes da checagem de legalidade e lança erro se a partida já terminou. O estado ganhou `endReason` (`'hp_zero' | 'turn_limit' | 'forfeit' | null`) e o evento `game_over` ganhou `reason`. 8 testes novos (26 no total).
+
 ## Princípios
 
 - **TypeScript puro**: sem tela, relógio, rede ou `Math.random`. Roda no celular (fase 1) e no servidor (fases 2 a 4) com o mesmo código.
@@ -20,13 +22,13 @@ Motor no `main` desde o **PR #1**: 30 cartas, validação de baralho, 5 baralhos
 | Função / tipo | O que faz |
 | --- | --- |
 | `createGame(deckA, deckB, seed, rules?)` | Valida os dois baralhos, embaralha com a semente, sorteia quem começa e devolve `{ state, events }`. Lança erro se o baralho for inválido. |
-| `legalActions(state)` | Lista as ações permitidas ao jogador ativo: `{type:'play', handIndex, slot}` e `{type:'end'}`. |
-| `applyAction(state, action)` | Aplica uma ação e devolve `{ state, events }`. Lança erro para ação ilegal. `end` resolve os ataques e passa o turno. |
+| `legalActions(state)` | Lista as ações permitidas ao jogador ativo: `{type:'play', handIndex, slot}` e `{type:'end'}`. Não inclui `forfeit` (veja abaixo). Vazia quando a partida terminou. |
+| `applyAction(state, action)` | Aplica uma ação e devolve `{ state, events }`. Lança erro para ação ilegal. `end` resolve os ataques e passa o turno. `{type:'forfeit', player}` encerra a partida com vitória do outro jogador (`endReason: 'forfeit'`), a qualquer momento enquanto ela não terminou. |
 | `validateDeck(deck, rules)` | Devolve a lista de problemas (vazia = válido): tamanho, repetidas, teto de poder por raridade (orçamento + bônus de foto + melhoria) e limite de poder do baralho. |
 | `cardPower`, `deckPower`, `energyCostOf`, `damageAgainst`, `elementMultiplier`, `maxCardPower`, `photoBonusCap`, `upgradeCap` | Helpers de regra. |
 | `greedyBot`, `makeRandomBot(rng)` | Bots. Cada chamada devolve **uma** ação; chame de novo até vir `{type:'end'}`. O guloso é determinístico. |
 | `CARDS`, `PREBUILT_DECKS` | Cartas fixas da fase 1 e baralhos prontos. |
-| `GameEvent` | Eventos para o app animar/mostrar o log (`turn_start`, `draw`, `play`, `attack_creature`, `attack_player`, `creature_died`, `game_over`). |
+| `GameEvent` | Eventos para o app animar/mostrar o log (`turn_start`, `draw`, `play`, `attack_creature`, `attack_player`, `creature_died`, `game_over` com `winner` e `reason`). |
 
 Arquivos: `types.ts` (tipos), `rules.ts` (regras e `DEFAULT_RULES`), `cards.ts`, `deck.ts`, `game.ts`, `bots.ts`, `rng.ts` (gerador determinístico).
 

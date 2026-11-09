@@ -59,6 +59,9 @@ export interface Rules {
   upgradeRatio: number;
 }
 
+/** Por que a partida terminou: vida zerada, limite de turnos ou desistência de um jogador. */
+export type GameEndReason = 'hp_zero' | 'turn_limit' | 'forfeit';
+
 export interface GameState {
   rules: Rules;
   players: [PlayerState, PlayerState];
@@ -71,11 +74,19 @@ export interface GameState {
   /** Estado do gerador de números aleatórios; faz parte do estado do jogo. */
   rngState: number;
   winner: PlayerIndex | 'draw' | null;
+  /** Motivo do fim da partida; null enquanto ela estiver em andamento. */
+  endReason: GameEndReason | null;
 }
 
 export type Action =
   | { type: 'play'; handIndex: number; slot: number }
-  | { type: 'end' };
+  | { type: 'end' }
+  /**
+   * Desistência: o jogador `player` abandona e o adversário vence. Vale a qualquer momento da
+   * partida e para QUALQUER um dos dois (inclusive fora da vez dele, como na fase 4 online).
+   * Por isso carrega o jogador e não aparece em `legalActions`, que lista só as ações do jogador ativo.
+   */
+  | { type: 'forfeit'; player: PlayerIndex };
 
 export type GameEvent =
   | { type: 'turn_start'; player: PlayerIndex; turn: number }
@@ -91,4 +102,4 @@ export type GameEvent =
     }
   | { type: 'attack_player'; player: PlayerIndex; slot: number; damage: number; hpAfter: number }
   | { type: 'creature_died'; player: PlayerIndex; slot: number; card: CardDef }
-  | { type: 'game_over'; winner: PlayerIndex | 'draw' };
+  | { type: 'game_over'; winner: PlayerIndex | 'draw'; reason: GameEndReason };

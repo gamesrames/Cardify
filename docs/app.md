@@ -8,6 +8,8 @@ Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolhe
 
 **Fase 3 (contas e nuvem) escrita e testada sem celular** (testes do `app/`, tipos, empacotamento web e a tela de boas-vindas vista no navegador; o envio do código e a conta real **não** foram exercitados porque o ambiente não alcança o Supabase). Veja a seção "Fase 3" abaixo.
 
+**Desistir (2026-11-09):** a partida tem o botão "🏳️ Desistir" ao lado de "Encerrar turno", disponível a qualquer momento (até na vez do bot). Pede confirmação numa janela da própria tela (não usa `Alert.alert`, que não funciona no navegador); ao confirmar, chama `forfeit()` do `useGame`, que manda `{type:'forfeit', player: HUMAN}` ao motor. A tela de resultado mostra "Você desistiu" (conta como derrota) com Revanche, Escolher outro baralho e Menu. A regra mora no motor, a tela só pede. Verificado no navegador (Playwright, 390x844); celular ainda não.
+
 Animações continuam fora. A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
 
 ## Fase 2: tela "Criar carta" (PR separado do PR do servidor)
@@ -118,6 +120,8 @@ Se não conectar:
 3. Toque em "Encerrar turno". Suas cartas atacam; o bot joga em seguida e o log mostra tudo.
 4. Jogue até a vida de alguém chegar a 0. Deve aparecer o vencedor com "Revanche", "Escolher outro baralho" e "Menu".
 5. Repita no iPhone e no Android. Anote qualquer travamento, texto cortado ou botão difícil de tocar.
+
+6. Para testar sem jogar tudo: toque em **Desistir** → "Desistir" na confirmação (ou "Continuar jogando" para voltar). Deve aparecer "Você desistiu" com as três opções.
 
 Botão voltar do Android durante a partida pede confirmação antes de sair.
 

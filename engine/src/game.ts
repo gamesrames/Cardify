@@ -75,6 +75,7 @@ export function createGame(
     energy: 0,
     rngState: seed | 0,
     winner: null,
+    endReason: null,
   };
   shuffleInPlace(state, state.players[0].drawPile);
   shuffleInPlace(state, state.players[1].drawPile);
@@ -128,7 +129,8 @@ export function legalActions(state: GameState): Action[] {
   return actions;
 }
 
-export function isLegal(state: GameState, action: Action): boolean {
+/** Ação de jogada ou de fim de turno é legal? (Desistência é tratada à parte em `applyAction`.) */
+export function isLegal(state: GameState, action: Exclude<Action, { type: 'forfeit' }>): boolean {
   return legalActions(state).some(
     (a) =>
       a.type === action.type &&
@@ -137,6 +139,7 @@ export function isLegal(state: GameState, action: Action): boolean {
 }
 
 export function applyAction(prev: GameState, action: Action): StepResult {
+  if (action.type === 'forfeit') return forfeit(prev, action.player);
   if (!isLegal(prev, action)) {
     throw new Error(`Ação ilegal: ${JSON.stringify(action)}`);
   }
@@ -158,13 +161,24 @@ export function applyAction(prev: GameState, action: Action): StepResult {
     const a = state.players[0].hp;
     const b = state.players[1].hp;
     state.winner = a === b ? 'draw' : a > b ? 0 : 1;
-    events.push({ type: 'game_over', winner: state.winner });
+    state.endReason = 'turn_limit';
+    events.push({ type: 'game_over', winner: state.winner, reason: 'turn_limit' });
   }
   if (state.winner === null) {
     state.active = other(state.active);
     startTurn(state, events);
   }
   return { state, events };
+}
+
+/** Desistência: encerra na hora e dá a vitória ao adversário. Não mexe em vida, campo nem mãos. */
+function forfeit(prev: GameState, player: PlayerIndex): StepResult {
+  if (player !== 0 && player !== 1) throw new Error(`Jogador inválido: ${String(player)}`);
+  if (prev.winner !== null) throw new Error('A partida já terminou: não dá para desistir.');
+  const state = clone(prev);
+  state.winner = other(player);
+  state.endReason = 'forfeit';
+  return { state, events: [{ type: 'game_over', winner: state.winner, reason: 'forfeit' }] };
 }
 
 /** No fim do turno, cada criatura do jogador ativo ataca a posição oposta, da esquerda para a direita. */
@@ -183,7 +197,8 @@ function resolveAttacks(state: GameState, events: GameEvent[]): void {
       events.push({ type: 'attack_player', player: me, slot, damage: attacker.card.attack, hpAfter: theirs.hp });
       if (theirs.hp <= 0) {
         state.winner = me;
-        events.push({ type: 'game_over', winner: me });
+        state.endReason = 'hp_zero';
+        events.push({ type: 'game_over', winner: me, reason: 'hp_zero' });
         return;
       }
       continue;

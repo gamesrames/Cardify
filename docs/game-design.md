@@ -15,6 +15,7 @@ Fórmulas v0 aprovadas pelo usuário em 2026-11-08 e implementadas no motor (PR 
 - **3 posições** (lanes) por jogador. Por padrão a criatura já ataca no fim do turno em que entrou (a "doença de invocação", que a faria esperar o turno seguinte, existe como opção do simulador e está desligada).
 - **Combate:** no fim do turno do jogador ativo, cada criatura dele ataca a posição oposta, da esquerda para a direita. Se há criatura lá, ela leva o dano (e o dano persiste entre turnos; vida 0 = vai para o descarte). Se a posição oposta está vazia, o dano vai direto na vida do jogador. Quem é atacado não revida.
 - Limite de **60 turnos** (contando os dois jogadores): vence quem tem mais vida; empate = empate.
+- **Desistência:** qualquer jogador pode desistir a qualquer momento (mesmo fora da vez dele). A partida termina na hora e o **adversário vence**; vida, campo e mãos ficam como estavam. É um motivo de fim de jogo como os outros (`endReason`: `hp_zero`, `turn_limit`, `forfeit`).
 
 ## Elementos
 

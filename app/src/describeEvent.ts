@@ -47,6 +47,12 @@ export function describeEvent(event: GameEvent, human: PlayerIndex): { text: str
         tone: event.player === human ? 'bad' : 'good',
       };
     case 'game_over':
+      if (event.reason === 'forfeit') {
+        return {
+          text: event.winner === human ? 'Fim de jogo: o bot desistiu, você venceu!' : 'Fim de jogo: você desistiu (derrota)',
+          tone: 'info',
+        };
+      }
       return {
         text: event.winner === 'draw' ? 'Fim de jogo: empate' : `Fim de jogo: ${event.winner === human ? 'você venceu!' : 'o bot venceu'}`,
         tone: 'info',
