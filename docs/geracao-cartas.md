@@ -4,7 +4,7 @@ Fase 2 em diante. Dono: thread de geração de cartas (junto com backend no come
 
 ## Estado atual
 
-**Servidor implementado e testado no computador** (branch da fase 2, ainda sem PR): gerador de cartas, hash perceptual, cota diária, duplicatas e classificadores (manual e Gemini) em `supabase/`. **Publicado no projeto Supabase, mas ainda não chamado por HTTP, nem pela câmera do app** (a parte do app ainda não foi feita). O classificador ativo é escolhido pelo segredo `CLASSIFIER` (`manual` por padrão; `gemini` quando a chave estiver salva).
+**Fase 2 fechada no navegador (2026-11-09); falta o teste em celular.** Servidor (`supabase/`), tela "Criar carta" (câmera; no navegador, seletor de arquivo), foto dentro da carta e "Meu baralho" jogável contra o bot estão no `main` (PRs #4, #6, #8, #9). A função `create-card` está **publicada (versão 6) com o Gemini ligado** (segredos `GEMINI_API_KEY` e `CLASSIFIER=gemini` salvos pelo usuário no Supabase; no app, `EXPO_PUBLIC_MANUAL_CATEGORY=false` esconde a lista de categorias). Confirmado pelo usuário no navegador (Expo web): foto de um coelho virou carta sem escolher categoria, a foto aparece na carta e uma partida completa contra o bot foi jogada com ela. **Nada foi testado em aparelho** (iPhone e Poco).
 
 ## Decidido
 
@@ -49,6 +49,12 @@ Detalhes (entrada, saída, erros) em [`backend.md`](backend.md).
 
 Foto vira carta em menos de 10 segundos; a mesma foto tirada duas vezes é recusada; a 15ª foto do dia é bloqueada pelo servidor.
 
+Situação em 2026-11-09:
+- ✓ Foto vira carta, com a categoria detectada pelo Gemini (navegador, projeto Supabase real).
+- ✓ Carta de foto jogável numa partida completa contra o bot.
+- ✓ Duplicata e cota (15ª foto) verificadas nos testes automatizados com o SQL real (PGlite); não repetidas por HTTP.
+- ✗ **Pendente:** os mesmos passos no celular (câmera de verdade no iPhone 14 Pro Max e no Poco), o tempo foto→carta medido com rede, e o limiar do hash com fotos reais.
+
 ## Fora da fase 2
 
 Nomes gerados por IA e moderação.
@@ -66,6 +72,7 @@ As lojas e a LGPD exigem, antes de qualquer lançamento aberto:
 
 ## A definir
 
+- **Categorias genéricas:** o Gemini só escolhe entre as 25 categorias. Uma foto de coelho virou "Animal" (categoria genérica, elemento terra, bônus 3%), porque não há "coelho"/"roedor" na lista. É o comportamento esperado; para nomes mais específicos, basta inserir categorias novas na tabela `categories` (sem republicar a função, ela lê a tabela a cada pedido). Decidir quais acrescentar depois de ver mais fotos reais.
 - Limiar do hash com fotos reais (hoje 10 de 64 bits) e se fotos de tela/foto da foto passam.
 - Bônus de categoria: resolvido com o mínimo de +1 (ver acima); conferir no simulador se a comum com +1 (10 de poder) desequilibra.
 - Resolvido pelo PR #5 do motor: `validateDeck` agora aceita carta até orçamento + bônus de foto + melhoria. Um teste do gerador confere que toda carta gerada passa nessa validação.

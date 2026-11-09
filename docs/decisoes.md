@@ -73,4 +73,5 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
 - Teto final de melhoria por raridade (hoje 25% do orçamento, só reservado na validação) e a lista final de categorias com seus bônus.
 - Limiar do hash perceptual com fotos reais de celular.
+- Quais categorias novas acrescentar (hoje coelho vira "Animal"); inserir na tabela `categories` não exige republicar a função.
 - Bibliotecas de navegação e de estado do app.
