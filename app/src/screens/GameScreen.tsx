@@ -3,9 +3,10 @@ import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, useWindowD
 import type { ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
+import { Lane, PlayerBar } from '../components/Board';
 import { CardView } from '../components/CardView';
 import { legalActions } from '../motor';
-import type { Action, Creature, PlayerState } from '../motor';
+import type { Action } from '../motor';
 import { CARD_ASPECT, cardWidthFor, MAX_APP_WIDTH } from '../layout';
 import { colors } from '../theme';
 import { BOT, HUMAN, useGame } from '../useGame';
@@ -94,7 +95,7 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.column}>
-      <PlayerBar title={`🤖 Bot · ${botDeckName}`} player={foe} extra={`🃏 ${foe.hand.length} na mão`} />
+      <PlayerBar title={`🤖 Bot · ${botDeckName}`} hp={foe.hp} extra={`🃏 ${foe.hand.length} na mão`} />
       <Lane field={foe.field} cardWidth={cardWidth} />
 
       <View style={styles.statusBar}>
@@ -107,7 +108,7 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
       <Lane field={me.field} cardWidth={cardWidth} mine selectedSlots={playableSlots} onTapSlot={tapMySlot} />
       <PlayerBar
         title={`🙂 Você · ${playerDeckName}`}
-        player={me}
+        hp={me.hp}
         extra={isHumanTurn ? `⚡ ${state.energy} de energia` : '⚡ —'}
       />
 
@@ -190,81 +191,10 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
   );
 }
 
-function PlayerBar({ title, player, extra }: { title: string; player: PlayerState; extra: string }) {
-  return (
-    <View style={styles.playerBar}>
-      <Text style={styles.playerTitle} numberOfLines={1}>
-        {title}
-      </Text>
-      <Text style={styles.hp}>❤️ {Math.max(0, player.hp)}</Text>
-      <Text style={styles.extra}>{extra}</Text>
-    </View>
-  );
-}
-
-function Lane({
-  field,
-  cardWidth,
-  mine = false,
-  selectedSlots,
-  onTapSlot,
-}: {
-  field: (Creature | null)[];
-  cardWidth: number;
-  mine?: boolean;
-  selectedSlots?: Set<number>;
-  onTapSlot?: (slot: number) => void;
-}) {
-  return (
-    <View style={styles.lane}>
-      {field.map((creature, slot) =>
-        creature ? (
-          <CardView key={slot} card={creature.card} width={cardWidth} health={creature.health} />
-        ) : (
-          <EmptySlot
-            key={slot}
-            width={cardWidth}
-            label={mine ? `Posição ${slot + 1}` : 'Vazia'}
-            highlight={selectedSlots?.has(slot) ?? false}
-            onPress={onTapSlot ? () => onTapSlot(slot) : undefined}
-          />
-        ),
-      )}
-    </View>
-  );
-}
-
-function EmptySlot({ width, label, highlight, onPress }: { width: number; label: string; highlight: boolean; onPress?: () => void }) {
-  return (
-    <Pressable
-      style={[styles.slot, { width, height: width / CARD_ASPECT }, highlight && styles.slotHighlight]}
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <Text style={[styles.slotText, highlight && { color: colors.good }]}>{highlight ? 'Jogar aqui' : label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
   // Em tela larga (navegador) o jogo fica numa coluna centralizada, como num celular.
   column: { flex: 1, width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center' },
-  playerBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, gap: 10 },
-  playerTitle: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '700' },
-  hp: { color: colors.text, fontSize: 16, fontWeight: '800' },
-  extra: { color: colors.textDim, fontSize: 13 },
-  lane: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, justifyContent: 'center' },
-  slot: {
-    borderRadius: 10,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slotHighlight: { borderColor: colors.good, backgroundColor: 'rgba(74, 222, 128, 0.1)' },
-  slotText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',

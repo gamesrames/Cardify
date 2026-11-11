@@ -4,7 +4,7 @@ Pasta do servidor: `supabase/` (`src/match/`, migração `20261109000002_partida
 
 ## Estado atual
 
-**Servidor escrito e testado no computador** (banco real em memória, motor real), **ainda não publicado** no projeto Supabase: depende de o usuário colar a migração e a função no painel (roteiro abaixo). Telas do app: PR seguinte.
+**Servidor escrito e testado no computador** (banco real em memória, motor real), **ainda não publicado** no projeto Supabase: depende de o usuário colar a migração e a função no painel (roteiro abaixo). **Telas do app escritas** (`app.md`, seção "Fase 4") e verificadas no navegador contra o handler e o banco reais por um servidor falso local; **o Supabase de verdade (Realtime, fotos no Storage) e o celular ainda não foram testados.**
 
 ## Critério de pronto da fase 4
 
@@ -83,4 +83,5 @@ Nenhum destes passos pode ser feito pelas threads (o ambiente delas não alcanç
 
 - Anti-fraude leve, de protótipo: o servidor é a autoridade do estado, mas não há detecção de contas múltiplas nem de conluio.
 - Sem revanche, sem espectador, sem matchmaking e sem limpeza automática de partidas abandonadas (fase 5).
-- A função `match` ainda não foi chamada num servidor real (o ambiente de desenvolvimento não alcança `supabase.co` e não há Deno): o primeiro uso real é o teste do usuário. O bundle foi carregado em Node com um Supabase falso para conferir que sobe sem erro.
+- A função `match` ainda não foi chamada num servidor real (o ambiente de desenvolvimento não alcança `supabase.co` e não há Deno): o primeiro uso real é o teste do usuário. O bundle foi carregado em Node com um Supabase falso para conferir que sobe sem erro, e o app foi exercitado no navegador contra o handler e o banco reais por um servidor falso (sem Realtime: só a consulta de reserva foi exercitada).
+- O Realtime só foi exercitado de verdade no seu projeto; se não avisar a tempo, o jogo segue pela consulta de reserva (até 5 s de atraso).

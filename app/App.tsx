@@ -14,6 +14,8 @@ import { MyDeckScreen } from './src/screens/MyDeckScreen';
 import { CreateCardScreen } from './src/screens/CreateCardScreen';
 import { DeckPickScreen } from './src/screens/DeckPickScreen';
 import { GameScreen } from './src/screens/GameScreen';
+import { OnlineGameScreen } from './src/screens/OnlineGameScreen';
+import { OnlineScreen } from './src/screens/OnlineScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { colors } from './src/theme';
 
@@ -25,6 +27,8 @@ type Screen =
   | { name: 'create' }
   | { name: 'mydeck' }
   | { name: 'account' }
+  | { name: 'online' }
+  | { name: 'onlinegame'; matchId: string }
   | { name: 'game'; playerDeck: string; botDeck: string; seed: number };
 
 /** A semente é sorteada AQUI (camada de tela). O motor em si nunca usa Math.random. */
@@ -91,6 +95,13 @@ export default function App() {
             onChangeDeck={() => setScreen({ name: 'decks' })}
             onMenu={() => setScreen({ name: 'home' })}
           />
+        ) : screen.name === 'onlinegame' ? (
+          // key = partida: trocar de partida recomeça a tela do zero.
+          <OnlineGameScreen key={screen.matchId} matchId={screen.matchId} onExit={() => setScreen({ name: 'home' })} />
+        ) : screen.name === 'online' ? (
+          <SafeAreaView style={styles.root}>
+            <OnlineScreen onOpenMatch={(matchId) => setScreen({ name: 'onlinegame', matchId })} onBack={() => setScreen({ name: 'home' })} />
+          </SafeAreaView>
         ) : screen.name === 'mydeck' ? (
           <SafeAreaView style={styles.root}>
             <MyDeckScreen userId={user?.id ?? null} isGuest={user?.isAnonymous ?? false} onPlay={playMyDeck} onBack={() => setScreen({ name: 'home' })} />
@@ -111,6 +122,7 @@ export default function App() {
                 onPlay={() => setScreen({ name: 'decks' })}
                 onCreateCard={() => setScreen({ name: 'create' })}
                 onMyDeck={() => setScreen({ name: 'mydeck' })}
+                onOnline={user ? () => setScreen({ name: 'online' }) : undefined}
                 onAccount={user ? () => setScreen({ name: 'account' }) : undefined}
                 accountLabel={user ? (user.isAnonymous ? 'Convidado · criar conta' : `Conta: ${emailToHandle(user.email) ?? user.email ?? 'minha conta'}`) : undefined}
               />

@@ -7,6 +7,8 @@ interface Props {
   onPlay: () => void;
   onCreateCard: () => void;
   onMyDeck: () => void;
+  /** Sem servidor configurado (modo offline) não há partida online: o botão some. */
+  onOnline?: () => void;
   /** Sem servidor configurado (modo offline) não há conta: o botão some. */
   onAccount?: () => void;
   accountLabel?: string;
@@ -22,12 +24,12 @@ function advantageCycle(): string {
   return parts.join('  ·  ');
 }
 
-export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onAccount, accountLabel }: Props) {
+export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onOnline, onAccount, accountLabel }: Props) {
   const r = DEFAULT_RULES;
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Cardify</Text>
-      <Text style={styles.subtitle}>Protótipo · fases 1 a 3</Text>
+      <Text style={styles.subtitle}>Protótipo · fases 1 a 4</Text>
 
       <View style={styles.box}>
         <Text style={styles.boxTitle}>Como jogar</Text>
@@ -42,6 +44,7 @@ export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onAccount, accountL
       </View>
 
       <Button label="Jogar contra o bot" onPress={onPlay} />
+      {onOnline && <Button label="Jogar online com um amigo" onPress={onOnline} />}
       <Button label="Meu baralho (com as suas fotos)" variant="secondary" onPress={onMyDeck} />
       <Button label="Criar carta com uma foto" variant="secondary" onPress={onCreateCard} />
       {onAccount && <Button label={accountLabel ?? 'Minha conta'} variant="secondary" onPress={onAccount} />}
