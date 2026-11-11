@@ -4,6 +4,7 @@ import { AuthFlowError } from '../auth';
 import { isValidHandle, isValidPassword, normalizeHandle } from '../authText';
 import { colors } from '../theme';
 import { Button } from './Button';
+import { ui } from './ui';
 
 interface Props {
   submitLabel: string;
@@ -48,9 +49,9 @@ export function CredentialsForm({ submitLabel, onSubmit, repeatPassword = false,
     <View style={styles.box}>
       {!passwordOnly && (
         <>
-          <Text style={styles.label}>Apelido</Text>
+          <Text style={ui.label}>Apelido</Text>
           <TextInput
-            style={styles.input}
+            style={ui.input}
             value={handle}
             onChangeText={setHandle}
             placeholder="ex.: rames_01"
@@ -60,12 +61,12 @@ export function CredentialsForm({ submitLabel, onSubmit, repeatPassword = false,
             maxLength={24}
             editable={!busy}
           />
-          <Text style={styles.hint}>3 a 20 caracteres: letras sem acento, números e "_".</Text>
+          <Text style={ui.small}>3 a 20 caracteres: letras sem acento, números e "_".</Text>
         </>
       )}
-      <Text style={styles.label}>{passwordOnly ? 'Nova senha' : 'Senha'}</Text>
+      <Text style={ui.label}>{passwordOnly ? 'Nova senha' : 'Senha'}</Text>
       <TextInput
-        style={styles.input}
+        style={ui.input}
         value={password}
         onChangeText={setPassword}
         placeholder="mínimo 6 caracteres"
@@ -79,7 +80,7 @@ export function CredentialsForm({ submitLabel, onSubmit, repeatPassword = false,
       />
       {repeatPassword && (
         <TextInput
-          style={styles.input}
+          style={ui.input}
           value={repeat}
           onChangeText={setRepeat}
           placeholder="repita a senha"
@@ -92,31 +93,17 @@ export function CredentialsForm({ submitLabel, onSubmit, repeatPassword = false,
           onSubmitEditing={() => void submit()}
         />
       )}
-      <Pressable onPress={() => setShow((v) => !v)}>
-        <Text style={styles.link}>{show ? 'Esconder a senha' : 'Mostrar a senha'}</Text>
+      <Pressable onPress={() => setShow((v) => !v)} accessibilityRole="button" hitSlop={10}>
+        <Text style={ui.link}>{show ? 'Esconder a senha' : 'Mostrar a senha'}</Text>
       </Pressable>
-      {mismatch && <Text style={styles.error}>As senhas não são iguais.</Text>}
+      {mismatch && <Text style={ui.error}>As senhas não são iguais.</Text>}
       <Button label={submitLabel} disabled={busy || !ready} onPress={() => void submit()} />
       {busy && <ActivityIndicator color={colors.accent} />}
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={ui.error}>{error}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   box: { gap: 12 },
-  label: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  hint: { color: colors.textDim, fontSize: 13, lineHeight: 19 },
-  link: { color: colors.accent, fontSize: 14, fontWeight: '700' },
-  input: {
-    backgroundColor: colors.panelAlt,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 12,
-    color: colors.text,
-    fontSize: 17,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  error: { color: colors.bad, fontSize: 14, lineHeight: 20 },
 });

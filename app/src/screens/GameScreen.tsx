@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import type { ScrollViewInstance } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, BackHandler, Text, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BattleTable } from '../components/BattleTable';
 import { Button } from '../components/Button';
-import { Lane, PlayerBar } from '../components/Board';
-import { CardView } from '../components/CardView';
+import { Dialog } from '../components/Dialog';
+import { ui } from '../components/ui';
 import { legalActions } from '../motor';
 import type { Action } from '../motor';
-import { CARD_ASPECT, cardWidthFor, MAX_APP_WIDTH } from '../layout';
-import { colors } from '../theme';
+import { cardWidthFor } from '../layout';
+import { playSfx } from '../sfx';
 import { BOT, HUMAN, useGame } from '../useGame';
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
 
 type PlayAction = Extract<Action, { type: 'play' }>;
 
+/** Partida contra o bot. O motor roda no próprio aparelho (useGame); o desenho da mesa é o BattleTable. */
 export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onChangeDeck, onMenu }: Props) {
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
@@ -30,7 +31,6 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
   const [selected, setSelected] = useState<number | null>(null);
   // Confirmação de "Desistir" feita na própria tela (Alert.alert não funciona no navegador).
   const [confirmingForfeit, setConfirmingForfeit] = useState(false);
-  const logRef = useRef<ScrollViewInstance>(null);
 
   const me = state.players[HUMAN];
   const foe = state.players[BOT];
@@ -52,10 +52,6 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
     return () => sub.remove();
   });
 
-  useEffect(() => {
-    logRef.current?.scrollToEnd({ animated: true });
-  }, [log.length]);
-
   function confirmExit() {
     Alert.alert('Sair da partida?', 'O progresso desta partida será perdido.', [
       { text: 'Continuar jogando', style: 'cancel' },
@@ -65,6 +61,7 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
 
   function tapHand(index: number) {
     if (!playableHand.has(index)) return;
+    playSfx('select');
     setSelected(selected === index ? null : index);
   }
 
@@ -88,141 +85,59 @@ export function GameScreen({ playerDeckName, botDeckName, seed, onRematch, onCha
   const selectedCard = selected !== null ? me.hand[selected] : undefined;
   let status: string;
   if (finished) status = 'Fim de jogo';
-  else if (!isHumanTurn) status = '🤖 Turno do bot…';
+  else if (!isHumanTurn) status = 'Vez do bot…';
   else if (selectedCard) status = `Toque numa posição vazia para jogar ${selectedCard.name}`;
   else status = 'Sua vez: escolha uma carta da mão ou encerre o turno';
 
+  const won = state.winner === HUMAN;
+  const draw = state.winner === 'draw';
+
   return (
-    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={styles.column}>
-      <PlayerBar title={`🤖 Bot · ${botDeckName}`} hp={foe.hp} extra={`🃏 ${foe.hand.length} na mão`} />
-      <Lane field={foe.field} cardWidth={cardWidth} />
-
-      <View style={styles.statusBar}>
-        <Text style={styles.turn}>Turno {state.turn}</Text>
-        <Text style={styles.status} numberOfLines={2}>
-          {status}
-        </Text>
-      </View>
-
-      <Lane field={me.field} cardWidth={cardWidth} mine selectedSlots={playableSlots} onTapSlot={tapMySlot} />
-      <PlayerBar
-        title={`🙂 Você · ${playerDeckName}`}
-        hp={me.hp}
-        extra={isHumanTurn ? `⚡ ${state.energy} de energia` : '⚡ —'}
-      />
-
-      <View style={styles.hand}>
-        {me.hand.map((card, i) => (
-          <CardView
-            key={`${card.id}-${i}`}
-            card={card}
-            width={cardWidth}
-            selected={selected === i}
-            dimmed={isHumanTurn && !playableHand.has(i)}
-            onPress={() => tapHand(i)}
-          />
-        ))}
-        {Array.from({ length: Math.max(0, state.rules.handSize - me.hand.length) }, (_, i) => (
-          <View key={`empty-${i}`} style={{ width: cardWidth, height: cardWidth / CARD_ASPECT }} />
-        ))}
-      </View>
-
-      <View style={styles.actions}>
-        <View style={styles.endTurn}>
-          <Button label="Encerrar turno" disabled={!isHumanTurn} onPress={handleEndTurn} />
-        </View>
-        <Pressable
-          style={styles.forfeit}
-          onPress={() => setConfirmingForfeit(true)}
-          disabled={finished}
-          accessibilityRole="button"
-          accessibilityLabel="Desistir da partida"
-        >
-          <Text style={styles.forfeitText}>🏳️ Desistir</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView ref={logRef} style={styles.log} contentContainerStyle={{ padding: 8 }}>
-        {log.map((line) => (
-          <Text key={line.id} style={[styles.logLine, line.tone === 'good' && { color: colors.good }, line.tone === 'bad' && { color: colors.bad }, line.tone === 'info' && { color: colors.warn }]}>
-            {line.text}
-          </Text>
-        ))}
-      </ScrollView>
-
-      </View>
-
+    <BattleTable
+      cardWidth={cardWidth}
+      turn={state.turn}
+      status={status}
+      foe={{ name: `Bot · ${botDeckName}`, icon: 'robot', hp: foe.hp, handCount: foe.hand.length, field: foe.field }}
+      me={{ name: `Você · ${playerDeckName}`, hp: me.hp, field: me.field, hand: me.hand }}
+      energy={isHumanTurn ? state.energy : null}
+      energyPerTurn={state.rules.energyPerTurn}
+      handSize={state.rules.handSize}
+      myTurn={isHumanTurn}
+      finished={finished}
+      outcome={finished ? (draw ? 'draw' : won ? 'win' : 'lose') : null}
+      selected={selected}
+      playableHand={playableHand}
+      playableSlots={playableSlots}
+      onTapHand={tapHand}
+      onTapSlot={tapMySlot}
+      onEndTurn={handleEndTurn}
+      onForfeit={() => setConfirmingForfeit(true)}
+      log={log}
+    >
       {confirmingForfeit && !finished && (
-        <View style={styles.overlay}>
-          <View style={styles.resultBox}>
-            <Text style={styles.resultTitle}>Desistir?</Text>
-            <Text style={styles.resultInfo}>A partida termina agora e conta como derrota.</Text>
-            <Button label="Desistir" onPress={handleForfeit} />
-            <Button label="Continuar jogando" variant="secondary" onPress={() => setConfirmingForfeit(false)} />
-          </View>
-        </View>
+        <Dialog title="Desistir?" icon="flag-variant">
+          <Text style={[ui.dim, { textAlign: 'center' }]}>A partida termina agora e conta como derrota.</Text>
+          <Button label="Desistir" variant="danger" onPress={handleForfeit} />
+          <Button label="Continuar jogando" variant="secondary" onPress={() => setConfirmingForfeit(false)} />
+        </Dialog>
       )}
 
       {finished && (
-        <View style={styles.overlay}>
-          <View style={styles.resultBox}>
-            <Text style={styles.resultTitle}>
-              {forfeited
-                ? '🏳️ Você desistiu'
-                : state.winner === 'draw'
-                  ? 'Empate'
-                  : state.winner === HUMAN
-                    ? '🏆 Você venceu!'
-                    : '💀 O bot venceu'}
-            </Text>
-            {forfeited && <Text style={styles.resultInfo}>Desistência conta como derrota.</Text>}
-            <Text style={styles.resultInfo}>
-              Vida final: você {Math.max(0, me.hp)} · bot {Math.max(0, foe.hp)} · {state.turn} turnos
-            </Text>
-            <Text style={styles.seed}>Semente da partida: {seed}</Text>
-            <Button label="Revanche (mesmo baralho)" onPress={onRematch} />
-            <Button label="Escolher outro baralho" variant="secondary" onPress={onChangeDeck} />
-            <Button label="Menu" variant="secondary" onPress={onMenu} />
-          </View>
-        </View>
+        <Dialog
+          title={forfeited ? 'Você desistiu' : draw ? 'Empate' : won ? 'Você venceu!' : 'O bot venceu'}
+          icon={forfeited ? 'flag-variant' : draw ? 'handshake' : won ? 'trophy' : 'skull'}
+          tone={draw ? 'neutral' : won ? 'good' : 'bad'}
+        >
+          {forfeited && <Text style={[ui.dim, { textAlign: 'center' }]}>Desistência conta como derrota.</Text>}
+          <Text style={[ui.dim, { textAlign: 'center' }]}>
+            Vida final: você {Math.max(0, me.hp)} · bot {Math.max(0, foe.hp)} · {state.turn} turnos
+          </Text>
+          <Text style={[ui.small, { textAlign: 'center', fontSize: 11 }]}>Semente da partida: {seed}</Text>
+          <Button label="Revanche (mesmo baralho)" onPress={onRematch} />
+          <Button label="Escolher outro baralho" variant="secondary" onPress={onChangeDeck} />
+          <Button label="Menu" variant="secondary" onPress={onMenu} />
+        </Dialog>
       )}
-    </View>
+    </BattleTable>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  // Em tela larga (navegador) o jogo fica numa coluna centralizada, como num celular.
-  column: { flex: 1, width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center' },
-  statusBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginVertical: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.panelAlt,
-  },
-  turn: { color: colors.warn, fontSize: 13, fontWeight: '800' },
-  status: { flex: 1, color: colors.text, fontSize: 13 },
-  hand: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8, justifyContent: 'center' },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  endTurn: { flex: 1 },
-  // Discreto de propósito: não é o botão principal e fica longe de "Encerrar turno" para evitar toque acidental.
-  forfeit: { paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  forfeitText: { color: colors.textDim, fontSize: 14, fontWeight: '600' },
-  log: { flex: 1, minHeight: 60, backgroundColor: colors.panel, marginHorizontal: 12, borderRadius: 8 },
-  logLine: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  resultBox: { width: '100%', backgroundColor: colors.panel, borderRadius: 16, padding: 20, gap: 12, borderWidth: 1, borderColor: colors.border },
-  resultTitle: { color: colors.text, fontSize: 28, fontWeight: '900', textAlign: 'center' },
-  resultInfo: { color: colors.textDim, fontSize: 14, textAlign: 'center' },
-  seed: { color: colors.textDim, fontSize: 11, textAlign: 'center' },
-});

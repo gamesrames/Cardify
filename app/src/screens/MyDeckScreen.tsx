@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Button } from '../components/Button';
 import { CardView } from '../components/CardView';
+import { Icon } from '../components/Icon';
+import { Screen } from '../components/Screen';
+import { ui } from '../components/ui';
 import { clearLegacyDeckIds, loadDeckIds, loadLegacyDeckIds, saveDeckIds } from '../deckStorage';
 import { createSaveQueue, resolveDeck } from '../deckSync';
 import type { SyncState } from '../deckSync';
@@ -11,9 +14,11 @@ import { CARDS, DEFAULT_RULES } from '../motor';
 import type { CardDef } from '../motor';
 import { fetchCloudDeck, isSupabaseConfigured, listMyCards, saveCloudDeck, signedPhotoUrls } from '../supabase';
 import { MAX_APP_WIDTH } from '../layout';
-import { colors } from '../theme';
+import { playSfx } from '../sfx';
+import { colors, fonts } from '../theme';
 
-const LIST_PADDING = 16;
+/** Igual ao padding lateral do conteúdo do componente Screen. */
+const LIST_PADDING = 20;
 const GRID_GAP = 8;
 
 interface Props {
@@ -100,6 +105,7 @@ export function MyDeckScreen({ userId, isGuest, onPlay, onBack }: Props) {
 
   function toggle(id: string) {
     const next = toggleId(ids, id);
+    if (next.length !== ids.length) playSfx('select');
     setIds(next);
     void saveDeckIds(localKey, next);
     if (isSupabaseConfigured) void queue.current.save(next);
@@ -108,72 +114,75 @@ export function MyDeckScreen({ userId, isGuest, onPlay, onBack }: Props) {
   function renderCards(cards: CardDef[]) {
     return (
       <View style={styles.grid}>
-        {cards.map((card) => (
-          <CardView
-            key={card.id}
-            card={card}
-            width={cardWidth}
-            photoUri={photoById[card.id]}
-            selected={ids.includes(card.id)}
-            onPress={() => toggle(card.id)}
-          />
-        ))}
+        {cards.map((card) => {
+          const chosen = ids.includes(card.id);
+          return (
+            <View key={card.id}>
+              <CardView card={card} width={cardWidth} photoUri={photoById[card.id]} selected={chosen} liftOnSelect={false} onPress={() => toggle(card.id)} />
+              {chosen && (
+                // Marca de "está no baralho". `pointerEvents: none` deixa o toque chegar na carta.
+                <View style={styles.check}>
+                  <Icon name="check-circle" size={22} color={colors.accent} />
+                </View>
+              )}
+            </View>
+          );
+        })}
       </View>
     );
   }
 
+  const full = deck.length === DEFAULT_RULES.deckSize;
   return (
-    <View style={styles.root}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
-        <Text style={styles.title}>Meu baralho</Text>
-        <Text style={styles.hint}>
-          Escolha {DEFAULT_RULES.deckSize} cartas. O poder total não pode passar de {DEFAULT_RULES.deckPowerLimit}. O
-          baralho é salvo na sua conta.
-        </Text>
-        {syncNote && <Text style={sync === 'offline' ? styles.warn : styles.hint}>{syncNote}</Text>}
-        {loading && <ActivityIndicator color={colors.accent} />}
-        {loadError && <Text style={styles.warn}>{loadError} Só as cartas fixas estão disponíveis.</Text>}
-
-        <Text style={styles.section}>Suas cartas de foto ({ownedCards.length})</Text>
-        {ownedCards.length > 0 ? (
-          renderCards(ownedCards)
-        ) : (
-          !loading && <Text style={styles.hint}>Nenhuma ainda. Crie uma pelo menu: "Criar carta com uma foto".</Text>
-        )}
-
-        <Text style={styles.section}>Cartas fixas</Text>
-        {renderCards(fixedCards)}
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <Text style={styles.count}>
-          {deck.length}/{DEFAULT_RULES.deckSize} cartas · Poder {status.power}/{DEFAULT_RULES.deckPowerLimit}
-        </Text>
-        {deck.length > 0 && status.problems.map((p) => <Text key={p} style={styles.problem}>{p}</Text>)}
-        <View style={styles.buttons}>
-          <View style={{ flex: 1 }}>
-            <Button label="Voltar" variant="secondary" onPress={onBack} />
+    <Screen
+      title="Meu baralho"
+      onBack={onBack}
+      footer={
+        <>
+          <View style={styles.counters}>
+            <Text style={[styles.count, full && { color: colors.accent }]}>
+              {deck.length}/{DEFAULT_RULES.deckSize} cartas
+            </Text>
+            <Text style={[styles.count, status.power > DEFAULT_RULES.deckPowerLimit && { color: colors.badSoft }]}>
+              Poder {status.power}/{DEFAULT_RULES.deckPowerLimit}
+            </Text>
           </View>
-          <View style={{ flex: 2 }}>
-            <Button label="Jogar contra o bot" disabled={!status.valid} onPress={() => onPlay(deck, photoById)} />
-          </View>
+          {deck.length > 0 && status.problems.map((p) => <Text key={p} style={ui.error}>{p}</Text>)}
+          <Button label="Jogar contra o bot" icon="robot" disabled={!status.valid} onPress={() => onPlay(deck, photoById)} />
+        </>
+      }
+    >
+      <Text style={ui.dim}>
+        Escolha {DEFAULT_RULES.deckSize} cartas. O poder total não pode passar de {DEFAULT_RULES.deckPowerLimit}. O
+        baralho é salvo na sua conta.
+      </Text>
+      {syncNote && (
+        <View style={styles.sync}>
+          <Icon name={sync === 'offline' ? 'cloud-off-outline' : 'cloud-check-outline'} size={18} color={sync === 'offline' ? colors.warn : colors.textDim} />
+          <Text style={[sync === 'offline' ? ui.warn : ui.small, styles.syncText]}>{syncNote}</Text>
         </View>
-      </View>
-    </View>
+      )}
+      {loading && <ActivityIndicator color={colors.accent} />}
+      {loadError && <Text style={ui.warn}>{loadError} Só as cartas fixas estão disponíveis.</Text>}
+
+      <Text style={ui.section}>Suas cartas de foto ({ownedCards.length})</Text>
+      {ownedCards.length > 0 ? (
+        renderCards(ownedCards)
+      ) : (
+        !loading && <Text style={ui.dim}>Nenhuma ainda. Crie uma pelo menu: "Criar carta".</Text>
+      )}
+
+      <Text style={ui.section}>Cartas fixas</Text>
+      {renderCards(fixedCards)}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center' },
-  list: { padding: LIST_PADDING, gap: 12 },
-  title: { color: colors.text, fontSize: 26, fontWeight: '800' },
-  hint: { color: colors.textDim, fontSize: 14, lineHeight: 20 },
-  warn: { color: colors.warn, fontSize: 14 },
-  section: { color: colors.text, fontSize: 17, fontWeight: '800', marginTop: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
-  footer: { width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center', padding: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.panel },
-  count: { color: colors.text, fontSize: 15, fontWeight: '700', textAlign: 'center' },
-  problem: { color: colors.bad, fontSize: 12 },
-  buttons: { flexDirection: 'row', gap: 10 },
+  check: { position: 'absolute', top: -7, alignSelf: 'center', backgroundColor: colors.bg, borderRadius: 11, pointerEvents: 'none' },
+  sync: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  syncText: { flex: 1 },
+  counters: { flexDirection: 'row', justifyContent: 'space-between' },
+  count: { fontFamily: fonts.display, color: colors.text, fontSize: 13 },
 });
