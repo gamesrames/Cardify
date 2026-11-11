@@ -4,6 +4,8 @@ Pasta: `engine/`. Dono: thread de motor/balanceamento. Regras e fórmulas ficam 
 
 ## Estado atual
 
+**Fase 5 (2026-11-11):** novo `src/progression.ts` (funções puras de melhoria de carta, Elo e recompensas: `checkUpgrade`, `applyUpgrade`, `upgradeCost`, `ratingDelta`, `settleMatch`, `DEFAULT_PROGRESSION`), 17 testes em `test/progression.test.ts` e o simulador `npm run sim:upgrades`. Só acréscimo ao contrato; o combate não mudou. Regras em `game-design.md`, resumo em `progressao.md`.
+
 Motor no `main` desde o **PR #1**: 30 cartas, validação de baralho, 5 baralhos prontos, bot guloso, bot aleatório, simulador e 18 testes (vitest). Balanceamento da primeira rodada já incluído: orçamento da épica em 27 e ataque/vida de 9 cartas redistribuídos (detalhes em `game-design.md`). O segundo jogador recebe +2 de energia no primeiro turno (`secondPlayerBonusEnergy`).
 
 **Bônus de foto e melhorias na validação:** `validateDeck` não compara mais o poder da carta com o orçamento da raridade, e sim com o **teto da carta** = orçamento + bônus de foto (10%, mínimo +1) + melhoria (25%), calculado por `maxCardPower(rarity, rules)` (`photoBonusCap` e `upgradeCap` dão as partes). Isso deixa cartas com bônus de categoria, e depois melhoradas, entrarem no baralho. O limite de 110 do baralho continua contando o poder real de cada carta (`deckPower`). As frações ficam em `Rules` (`photoBonusRatio`, `upgradeRatio`).

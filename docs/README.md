@@ -23,6 +23,7 @@ Todo mundo deve passar por `visao-geral.md` na primeira vez.
 - [`app.md`](app.md) — app Expo: stack, telas previstas, como testar no celular.
 - [`backend.md`](backend.md) — Supabase: dados, segurança, login.
 - [`partidas-online.md`](partidas-online.md) — fase 4: 1x1 por convite, turnos no servidor, tempo de turno, privacidade da mão.
+- [`progressao.md`](progressao.md) — fase 5: Essência, melhoria de cartas, ranking Elo, escolhas padrão, passo a passo do SQL e roteiro de teste.
 - [`geracao-cartas.md`](geracao-cartas.md) — da foto à carta, duplicatas, moderação e privacidade.
 - [`decisoes.md`](decisoes.md) — registro de decisões em ordem cronológica.
 

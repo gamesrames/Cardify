@@ -67,9 +67,9 @@ async function finish(winner: 0 | 1 | 'draw', cause: SettleCause | 'cancelled', 
 }
 
 const resultOf = async (id: string) =>
-  (await db.query<Result>(`select * from match_results where match_id = $1`, [id])).rows[0];
+  (await db.query<Result>(`select * from match_results where match_id = $1`, [id])).rows[0]!;
 const stats = async (u: string) =>
-  (await db.query<Record<string, number>>(`select * from player_stats where user_id = $1`, [u])).rows[0];
+  (await db.query<Record<string, number>>(`select * from player_stats where user_id = $1`, [u])).rows[0]!;
 
 describe('regras no banco = regras do motor', () => {
   it('as tabelas de melhoria e os parâmetros copiam o motor', async () => {
@@ -106,7 +106,7 @@ describe('regras no banco = regras do motor', () => {
         const res = await resultOf(await finish(winner, cause, turns));
         const expected = settleMatch({ ratings: [r0, r1], winner, cause, turns, rated: true });
         const label = `${r0} x ${r1}, ${String(winner)}, ${cause}, turno ${turns}`;
-        expect({ label, rated: res!.rated, delta: [res!.host_delta, res!.guest_delta], essence: [res!.host_essence, res!.guest_essence] }).toEqual({
+        expect({ label, rated: res.rated, delta: [res.host_delta, res.guest_delta], essence: [res.host_essence, res.guest_essence] }).toEqual({
           label, rated: true, delta: expected.ratingDelta, essence: expected.essence,
         });
         expect([(await stats(U1)).rating, (await stats(U2)).rating]).toEqual(expected.ratingAfter);
@@ -184,7 +184,7 @@ describe('fim de partida', () => {
     await db.exec(`alter table player_stats rename to player_stats_off`);
     const id = await finish(0, 'hp_zero', 20);
     expect((await db.query<{ status: string }>(`select status from matches where id = $1`, [id])).rows[0]!.status).toBe('finished');
-    expect(await resultOf(id)).toBeUndefined(); // a pontuação foi desfeita junto
+    expect((await db.query(`select 1 from match_results where match_id = $1`, [id])).rows).toHaveLength(0); // a pontuação foi desfeita junto
   });
 
   it('pelo handler real: desistir no 1º turno mexe no rating, mas não paga Essência', async () => {

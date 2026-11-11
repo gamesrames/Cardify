@@ -86,10 +86,20 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | A visão por jogador (`viewFor`, `redactEvents`, `PlayerView`) mora em `engine/src/view.ts`, só como acréscimo ao contrato do motor. | É regra de "o que cada jogador pode saber"; o app e o servidor usam o mesmo tipo. | Motor |
 | Fotos do adversário: a visão lista as fotos das cartas dele já jogadas (em campo ou mortas) e uma policy de `storage.objects` libera exatamente esses caminhos (`match_views.photo_paths`). Nome do adversário vai dentro da visão; a policy extra em `profiles` da fase 3 não foi necessária. | Decisão do projeto: fotos são visíveis para os outros, mas cartas ainda escondidas na mão ou no monte não podem vazar pelo caminho da foto. | Backend |
 
+## 2026-11-11 (fase 5: progressão e ranking; escolhas padrão, a pessoa estava indisponível e ainda não revisou)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Um recurso só, a **Essência** (substitui "XP e moedas" da visão geral), vinda só de partidas online. Vitória 30, empate 20, derrota 10; 0 para quem desistiu/estourou/sumiu; menos de 6 turnos não paga. | Simples e reversível; partida contra o bot roda no celular e não é confiável para recompensa. | Game design / Backend |
+| Só cartas de foto melhoram; +1 vida = 1 ponto de poder, +1 ataque = 2; teto 2/3/4/6/7 por raridade (os 25% decididos); custo por ponto 10/15/20/30/40; conta nos 110 do baralho. | Mantém as 30 cartas fixas e o balanceamento da fase 1 intactos; poder em pontos casa com o teto já existente. | Game design |
+| Ranking Elo (início 1000, K 32, soma zero, piso 0), só online; desistir é derrota normal; par de jogadores pontua no máximo 10 partidas por dia (3 no final). | Padrão conhecido, sem matchmaking; o limite do par impede farmar com duas contas. | Game design / Backend |
+| Fim de partida pontuado por **trigger no banco** e melhoria por função SQL `upgrade_card`; o motor TS é a referência e um teste exige o mesmo resultado nos dois. | Não exige republicar a função `match` nem criar função nova; a pontuação é atômica com o fim da partida e nunca a impede. | Backend |
+| Achado, sem mudança: melhoria até 110 de poder ganha ~69% de baralho sem melhoria (a melhoria não custa energia). Opções em `progressao.md`; decisão da pessoa. | Simulação `sim:upgrades`. | Game design |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
-- Teto final de melhoria por raridade (hoje 25% do orçamento, só reservado na validação) e a lista final de categorias com seus bônus.
+- Teto e custo finais de melhoria (25% do orçamento e custos da fase 5 são padrão provisório; ver o achado de 69% em `progressao.md`) e a lista final de categorias com seus bônus.
 - Limiar do hash perceptual com fotos reais de celular.
 - Quais categorias novas acrescentar (hoje coelho vira "Animal"); inserir na tabela `categories` não exige republicar a função.
 - Bibliotecas de navegação e de estado do app.
