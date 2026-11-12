@@ -17,7 +17,7 @@ export const CARD_GAP = 8;
  * e as margens. Se mudar o layout da GameScreen, confira este valor (o teste e o script
  * de navegador descritos em docs/app.md acusam se estiver curto demais).
  */
-export const NON_CARD_HEIGHT = 340;
+export const NON_CARD_HEIGHT = 320;
 /** Abaixo disso a carta fica ilegível; prefere-se ficar justo a ficar minúsculo. */
 export const MIN_CARD_WIDTH = 56;
 

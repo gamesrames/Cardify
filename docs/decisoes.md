@@ -96,6 +96,16 @@ Só se acrescentam linhas no fim (ordem cronológica). Se uma decisão for subst
 | Fim de partida pontuado por **trigger no banco** e melhoria por função SQL `upgrade_card`; o motor TS é a referência e um teste exige o mesmo resultado nos dois. | Não exige republicar a função `match` nem criar função nova; a pontuação é atômica com o fim da partida e nunca a impede. | Backend |
 | Achado, sem mudança: melhoria até 110 de poder ganha ~69% de baralho sem melhoria (a melhoria não custa energia). Opções em `progressao.md`; decisão da pessoa. | Simulação `sim:upgrades`. | Game design |
 
+## 2026-11-11 (design visual)
+
+| Decisão | Motivo | Área |
+| --- | --- | --- |
+| Identidade visual **"Arena"** (escolhida pelo usuário entre três direções): fundo escuro, uma única cor de ação (verde-limão), foto na carta inteira, raridade como cor e brilho da moldura. Fontes Unbounded (títulos e números) e Inter (texto). Detalhes em `design.md`. | Deixa a foto do jogador ser a estrela e lê bem em tela pequena. "Álbum de figurinhas" puxava para infantil (público 18+) e "Grimório" brigava com fotos do dia a dia. | App / Design |
+| Toda a aparência sai de um tema central (`app/src/theme`, interface `Theme`); telas não digitam cor nem fonte. | A identidade foi escolhida sem teste no celular; trocar precisa ser barato (um arquivo). | App / Design |
+| Sem emoji na interface: ícones do Material Community Icons por um único componente (`Icon`). | Emoji muda de desenho entre iPhone, Android e navegador e não aceita a cor do tema. | App / Design |
+| Sons sintetizados por script do repositório (`scripts/gerar-sons.py`) e vibração com `expo-haptics`; um botão liga/desliga os dois. Animações com o `Animated` do React Native, sem biblioteca extra. | Orçamento zero e nenhuma licença de terceiros; menos dependências nativas para o Expo Go. | App / Design |
+| Nas boas-vindas, "Começar como convidado" passou a ser o botão principal e "Já tenho conta" o secundário (antes era o contrário). | Quem abre o app pela primeira vez quase nunca tem conta; o caminho mais comum fica em destaque. Reversível trocando a ordem na `WelcomeScreen`. | App / Design |
+
 ## Em aberto
 
 - Se a fórmula Poder = 2×Ataque + Vida continua ou muda de vez (a vida segue barateada; foi compensado nas cartas e no orçamento da épica).
