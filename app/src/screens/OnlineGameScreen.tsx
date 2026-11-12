@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import type { ScrollViewInstance } from 'react-native';
+import { Alert, BackHandler, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BattleTable } from '../components/BattleTable';
 import { Button } from '../components/Button';
-import { Lane, PlayerBar } from '../components/Board';
-import { CardView } from '../components/CardView';
+import { Dialog } from '../components/Dialog';
+import { ui } from '../components/ui';
 import { CardPhotosProvider } from '../cardPhotos';
 import { describeEvents } from '../describeEvent';
-import { CARD_ASPECT, cardWidthFor, MAX_APP_WIDTH } from '../layout';
+import { cardWidthFor, MAX_APP_WIDTH } from '../layout';
 import { clockOffsetMs, describeOutcome, formatClock, isGame, msLeft, shouldClaimTimeout } from '../matchApi';
-import type { GameViewData } from '../matchApi';
+import { playSfx } from '../sfx';
 import { useMatchPhotos } from '../useMatchPhotos';
 import { useOnlineMatch } from '../useOnlineMatch';
-import { colors } from '../theme';
+import { colors, fonts, radius } from '../theme';
 
 interface Props {
   matchId: string;
@@ -56,14 +56,10 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
 
   const [selected, setSelected] = useState<number | null>(null);
   const [confirmingForfeit, setConfirmingForfeit] = useState(false);
-  const logRef = useRef<ScrollViewInstance>(null);
   const log = useMemo(
     () => (game ? describeEvents(game.log, game.game.seat, game.logStart, { foeName: game.foeName ?? 'Adversário', endCause: game.endCause }) : []),
     [game],
   );
-  useEffect(() => {
-    logRef.current?.scrollToEnd({ animated: true });
-  }, [log.length]);
   // A mão mudou (outra versão da partida): a seleção antiga pode apontar para outra carta.
   const version = game?.version;
   useEffect(() => setSelected(null), [version]);
@@ -85,8 +81,8 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
   if (!row || !view) {
     return (
       <Centered>
-        <Text style={styles.big}>{loading ? 'Carregando a partida…' : 'Partida não encontrada'}</Text>
-        {error && <Text style={styles.error}>{error}</Text>}
+        <Text style={ui.hero}>{loading ? 'Carregando a partida…' : 'Partida não encontrada'}</Text>
+        {error && <Text style={[ui.error, styles.center]}>{error}</Text>}
         <Button label="Voltar" variant="secondary" onPress={onExit} />
       </Centered>
     );
@@ -97,8 +93,8 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
     if (row.status === 'finished') {
       return (
         <Centered>
-          <Text style={styles.big}>Convite encerrado</Text>
-          <Text style={styles.dim}>O convite foi cancelado ou venceu. Crie outro em "Jogar online".</Text>
+          <Text style={ui.hero}>Convite encerrado</Text>
+          <Text style={[ui.dim, styles.center]}>O convite foi cancelado ou venceu. Crie outro em "Jogar online".</Text>
           <Button label="Voltar ao menu" onPress={onExit} />
         </Centered>
       );
@@ -106,13 +102,13 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
     const code = view.kind === 'waiting' ? view.code : '';
     return (
       <Centered>
-        <Text style={styles.big}>Esperando o adversário</Text>
-        <Text style={styles.dim}>Passe este código ao seu amigo. Ele entra em "Jogar online" → "Entrar com código". Vale por 15 minutos.</Text>
+        <Text style={ui.hero}>Esperando o adversário</Text>
+        <Text style={[ui.dim, styles.center]}>Passe este código ao seu amigo. Ele entra em "Jogar online" → "Entrar com código". Vale por 15 minutos.</Text>
         <Text selectable style={styles.code}>
           {code}
         </Text>
-        <Text style={styles.dim}>A partida começa sozinha quando ele entrar.</Text>
-        {error && <Text style={styles.error}>{error}</Text>}
+        <Text style={[ui.dim, styles.center]}>A partida começa sozinha quando ele entrar.</Text>
+        {error && <Text style={[ui.error, styles.center]}>{error}</Text>}
         <Button
           label="Cancelar convite"
           variant="secondary"
@@ -139,12 +135,13 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
 
   let status: string;
   if (finished) status = 'Fim de jogo';
-  else if (!myTurn) status = `⏳ Vez de ${foeName}…`;
+  else if (!myTurn) status = `Vez de ${foeName}…`;
   else if (selectedCard) status = `Toque numa posição vazia para jogar ${selectedCard.name}`;
   else status = 'Sua vez: escolha uma carta da mão ou encerre o turno';
 
   function tapHand(index: number) {
     if (busy || !playableHand.has(index)) return;
+    playSfx('select');
     setSelected(selected === index ? null : index);
   }
   function tapMySlot(slot: number) {
@@ -164,99 +161,57 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
   }
 
   const outcome = finished ? describeOutcome(game) : null;
+  const won = finished && g.winner === g.seat;
 
   return (
     <CardPhotosProvider value={photoUrls}>
-      <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.column}>
-          <PlayerBar title={`🆚 ${foeName}`} hp={g.foe.hp} extra={`🃏 ${g.foe.handCount} na mão`} />
-          <Lane field={g.foe.field} cardWidth={cardWidth} />
-
-          <View style={styles.statusBar}>
-            <Text style={styles.turn}>Turno {g.turn}</Text>
-            <Text style={styles.status} numberOfLines={2}>
-              {error ?? status}
-            </Text>
-            {left !== null && !finished && (
-              <Text style={[styles.clock, left <= 10_000 && { color: colors.bad }]}>⏱ {formatClock(left)}</Text>
-            )}
-          </View>
-          {myTurn && myMissed > 0 && (
-            <Text style={styles.warn}>
-              ⚠️ Seu tempo já estourou {myMissed}x seguida(s). Com {game.maxMissedTurns} você perde por tempo.
-            </Text>
-          )}
-
-          <Lane field={g.me.field} cardWidth={cardWidth} mine selectedSlots={playableSlots} onTapSlot={tapMySlot} />
-          <PlayerBar title={`🙂 ${game.myName ?? 'Você'}`} hp={g.me.hp} extra={myTurn ? `⚡ ${g.energy} de energia` : '⚡ —'} />
-
-          <View style={styles.hand}>
-            {g.me.hand.map((card, i) => (
-              <CardView
-                key={`${card.id}-${i}`}
-                card={card}
-                width={cardWidth}
-                selected={selected === i}
-                dimmed={myTurn && !playableHand.has(i)}
-                onPress={() => tapHand(i)}
-              />
-            ))}
-            {Array.from({ length: Math.max(0, g.rules.handSize - g.me.hand.length) }, (_, i) => (
-              <View key={`empty-${i}`} style={{ width: cardWidth, height: cardWidth / CARD_ASPECT }} />
-            ))}
-          </View>
-
-          <View style={styles.actions}>
-            <View style={styles.endTurn}>
-              <Button label="Encerrar turno" disabled={!myTurn || busy} onPress={endTurn} />
-            </View>
-            <Pressable
-              style={styles.forfeit}
-              onPress={() => setConfirmingForfeit(true)}
-              disabled={finished}
-              accessibilityRole="button"
-              accessibilityLabel="Desistir da partida"
-            >
-              <Text style={styles.forfeitText}>🏳️ Desistir</Text>
-            </Pressable>
-          </View>
-
-          <ScrollView ref={logRef} style={styles.log} contentContainerStyle={{ padding: 8 }}>
-            {log.map((line) => (
-              <Text
-                key={line.id}
-                style={[styles.logLine, line.tone === 'good' && { color: colors.good }, line.tone === 'bad' && { color: colors.bad }, line.tone === 'info' && { color: colors.warn }]}
-              >
-                {line.text}
-              </Text>
-            ))}
-          </ScrollView>
-        </View>
-
+      <BattleTable
+        cardWidth={cardWidth}
+        turn={g.turn}
+        status={error ?? status}
+        statusIsError={error !== null}
+        clock={left !== null && !finished ? { text: formatClock(left), urgent: left <= 10_000 } : null}
+        warning={myTurn && myMissed > 0 ? `Seu tempo já estourou ${myMissed}x seguida(s). Com ${game.maxMissedTurns} você perde por tempo.` : null}
+        foe={{ name: foeName, icon: 'account', hp: g.foe.hp, handCount: g.foe.handCount, field: g.foe.field }}
+        me={{ name: game.myName ?? 'Você', hp: g.me.hp, field: g.me.field, hand: g.me.hand }}
+        energy={myTurn ? g.energy : null}
+        energyPerTurn={g.rules.energyPerTurn}
+        handSize={g.rules.handSize}
+        myTurn={myTurn}
+        busy={busy}
+        finished={finished}
+        outcome={finished ? (g.winner === 'draw' ? 'draw' : won ? 'win' : 'lose') : null}
+        selected={selected}
+        playableHand={playableHand}
+        playableSlots={playableSlots}
+        onTapHand={tapHand}
+        onTapSlot={tapMySlot}
+        onEndTurn={endTurn}
+        onForfeit={() => setConfirmingForfeit(true)}
+        log={log}
+      >
         {confirmingForfeit && !finished && (
-          <View style={styles.overlay}>
-            <View style={styles.resultBox}>
-              <Text style={styles.resultTitle}>Desistir?</Text>
-              <Text style={styles.resultInfo}>A partida termina agora e conta como derrota.</Text>
-              <Button label="Desistir" onPress={forfeit} />
-              <Button label="Continuar jogando" variant="secondary" onPress={() => setConfirmingForfeit(false)} />
-            </View>
-          </View>
+          <Dialog title="Desistir?" icon="flag-variant">
+            <Text style={[ui.dim, styles.center]}>A partida termina agora e conta como derrota.</Text>
+            <Button label="Desistir" variant="danger" onPress={forfeit} />
+            <Button label="Continuar jogando" variant="secondary" onPress={() => setConfirmingForfeit(false)} />
+          </Dialog>
         )}
 
         {outcome && (
-          <View style={styles.overlay}>
-            <View style={styles.resultBox}>
-              <Text style={styles.resultTitle}>{outcome.title}</Text>
-              <Text style={styles.resultInfo}>{outcome.detail}</Text>
-              <Text style={styles.resultInfo}>
-                Vida final: você {Math.max(0, g.me.hp)} · {foeName} {Math.max(0, g.foe.hp)} · {g.turn} turnos
-              </Text>
-              <Button label="Menu" onPress={onExit} />
-            </View>
-          </View>
+          <Dialog
+            title={outcome.title}
+            tone={outcome.tone}
+            icon={outcome.tone === 'good' ? 'trophy' : outcome.tone === 'neutral' ? 'handshake' : game.endCause === 'forfeit' ? 'flag-variant' : game.endCause === 'timeout' || game.endCause === 'abandoned' ? 'timer-outline' : 'skull'}
+          >
+            <Text style={[ui.dim, styles.center]}>{outcome.detail}</Text>
+            <Text style={[ui.dim, styles.center]}>
+              Vida final: você {Math.max(0, g.me.hp)} · {foeName} {Math.max(0, g.foe.hp)} · {g.turn} turnos
+            </Text>
+            <Button label="Menu" onPress={onExit} />
+          </Dialog>
         )}
-      </View>
+      </BattleTable>
     </CardPhotosProvider>
   );
 }
@@ -272,51 +227,19 @@ function Centered({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  column: { flex: 1, width: '100%', maxWidth: MAX_APP_WIDTH, alignSelf: 'center' },
   centered: { padding: 24, gap: 16, flexGrow: 1, justifyContent: 'center', maxWidth: MAX_APP_WIDTH, width: '100%', alignSelf: 'center' },
-  big: { color: colors.text, fontSize: 26, fontWeight: '900', textAlign: 'center' },
-  dim: { color: colors.textDim, fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  error: { color: colors.bad, fontSize: 14, textAlign: 'center' },
+  center: { textAlign: 'center' },
+  // O código do convite é o centro da tela de espera: grande, espaçado e fácil de ditar.
   code: {
+    fontFamily: fonts.displayHeavy,
     color: colors.accent,
-    fontSize: 52,
-    fontWeight: '900',
-    letterSpacing: 8,
+    fontSize: 40,
+    letterSpacing: 6,
     textAlign: 'center',
-    backgroundColor: colors.panel,
-    borderRadius: 14,
-    paddingVertical: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingVertical: 18,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.line,
   },
-  statusBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginVertical: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.panelAlt,
-  },
-  turn: { color: colors.warn, fontSize: 13, fontWeight: '800' },
-  status: { flex: 1, color: colors.text, fontSize: 13 },
-  clock: { color: colors.warn, fontSize: 15, fontWeight: '800' },
-  warn: { color: colors.warn, fontSize: 12, paddingHorizontal: 12, marginBottom: 4 },
-  hand: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 8, justifyContent: 'center' },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  endTurn: { flex: 1 },
-  forfeit: { paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  forfeitText: { color: colors.textDim, fontSize: 14, fontWeight: '600' },
-  log: { flex: 1, minHeight: 60, backgroundColor: colors.panel, marginHorizontal: 12, borderRadius: 8 },
-  logLine: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  resultBox: { width: '100%', backgroundColor: colors.panel, borderRadius: 16, padding: 20, gap: 12, borderWidth: 1, borderColor: colors.border },
-  resultTitle: { color: colors.text, fontSize: 28, fontWeight: '900', textAlign: 'center' },
-  resultInfo: { color: colors.textDim, fontSize: 14, textAlign: 'center' },
 });

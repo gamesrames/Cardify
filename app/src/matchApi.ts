@@ -129,22 +129,22 @@ export function describeOutcome(view: GameViewData): Outcome {
   const won = winner === view.game.seat;
   if (cause === 'forfeit') {
     return won
-      ? { title: '🏆 Você venceu!', detail: `${view.foeName ?? 'O adversário'} desistiu.`, tone: 'good' }
-      : { title: '🏳️ Você desistiu', detail: 'Desistência conta como derrota.', tone: 'bad' };
+      ? { title: 'Você venceu!', detail: `${view.foeName ?? 'O adversário'} desistiu.`, tone: 'good' }
+      : { title: 'Você desistiu', detail: 'Desistência conta como derrota.', tone: 'bad' };
   }
   if (cause === 'timeout') {
     return won
-      ? { title: '🏆 Você venceu!', detail: `${view.foeName ?? 'O adversário'} perdeu por tempo.`, tone: 'good' }
-      : { title: '⏱ Você perdeu por tempo', detail: 'O tempo do seu turno estourou duas vezes seguidas.', tone: 'bad' };
+      ? { title: 'Você venceu!', detail: `${view.foeName ?? 'O adversário'} perdeu por tempo.`, tone: 'good' }
+      : { title: 'Você perdeu por tempo', detail: 'O tempo do seu turno estourou duas vezes seguidas.', tone: 'bad' };
   }
   if (cause === 'abandoned') {
     return won
-      ? { title: '🏆 Você venceu!', detail: `${view.foeName ?? 'O adversário'} sumiu da partida.`, tone: 'good' }
-      : { title: '⏱ Você perdeu por ausência', detail: 'Ficou tempo demais sem jogar.', tone: 'bad' };
+      ? { title: 'Você venceu!', detail: `${view.foeName ?? 'O adversário'} sumiu da partida.`, tone: 'good' }
+      : { title: 'Você perdeu por ausência', detail: 'Ficou tempo demais sem jogar.', tone: 'bad' };
   }
   return won
-    ? { title: '🏆 Você venceu!', detail: 'Vida do adversário zerada.', tone: 'good' }
-    : { title: '💀 Você perdeu', detail: 'Sua vida chegou a zero.', tone: 'bad' };
+    ? { title: 'Você venceu!', detail: 'Vida do adversário zerada.', tone: 'good' }
+    : { title: 'Você perdeu', detail: 'Sua vida chegou a zero.', tone: 'bad' };
 }
 
 /** A visão é de uma partida (e não do convite esperando adversário)? */

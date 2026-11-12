@@ -1,5 +1,4 @@
 import type { GameEvent, PlayerIndex } from './motor';
-import { ELEMENT_INFO } from './theme';
 
 export type Tone = 'info' | 'good' | 'bad' | 'neutral';
 
@@ -34,7 +33,7 @@ export function describeEvent(event: GameEvent, human: PlayerIndex, options: Des
       return { text: `Você comprou ${event.card.name}`, tone: 'neutral' };
     case 'play':
       return {
-        text: `${who(event.player)} jogou ${ELEMENT_INFO[event.card.element].emoji} ${event.card.name} na posição ${event.slot + 1}`,
+        text: `${who(event.player)} jogou ${event.card.name} na posição ${event.slot + 1}`,
         tone: tone(event.player),
       };
     case 'attack_creature': {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +18,9 @@ import { GameScreen } from './src/screens/GameScreen';
 import { OnlineGameScreen } from './src/screens/OnlineGameScreen';
 import { OnlineScreen } from './src/screens/OnlineScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
+import { loadSoundPreference } from './src/sfx';
 import { colors } from './src/theme';
+import { fontAssets } from './src/theme/fontAssets';
 
 // Navegação mínima: um estado diz qual tela mostrar. Para 3 telas, uma biblioteca de
 // navegação seria peso à toa; reavaliar quando houver coleção, câmera, etc. (fase 2).
@@ -48,6 +51,13 @@ export default function App() {
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const auth = useAuth();
   const userId = auth.status === 'in' ? auth.user.id : null;
+  // Fontes do tema (Unbounded e Inter). `fontError` = não carregou: segue com a fonte do sistema em vez de travar.
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const fontsReady = fontsLoaded || fontError !== null;
+
+  useEffect(() => {
+    void loadSoundPreference();
+  }, []);
 
   // Trocou de jogador (saiu, entrou em outra conta): volta ao menu e esquece as fotos do anterior.
   useEffect(() => {
@@ -67,12 +77,12 @@ export default function App() {
 
   // Sem sessão: boas-vindas (entrar ou começar como convidado). Sem servidor configurado (modo offline da
   // fase 1), `status` é 'off' e o app abre direto no menu.
-  if (auth.status === 'loading' || auth.status === 'out') {
+  if (!fontsReady || auth.status === 'loading' || auth.status === 'out') {
     return (
       <SafeAreaProvider>
         <StatusBar style="light" />
         <SafeAreaView style={styles.root}>
-          {auth.status === 'loading' ? <ActivityIndicator style={styles.loading} color={colors.accent} /> : <WelcomeScreen />}
+          {!fontsReady || auth.status === 'loading' ? <ActivityIndicator style={styles.loading} color={colors.accent} /> : <WelcomeScreen />}
         </SafeAreaView>
       </SafeAreaProvider>
     );

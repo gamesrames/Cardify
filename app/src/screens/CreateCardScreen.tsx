@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../components/Button';
 import { CardView } from '../components/CardView';
+import { Icon } from '../components/Icon';
+import { Screen } from '../components/Screen';
+import { ui } from '../components/ui';
 import { CreateCardError, requestCard, toCardDef } from '../cardApi';
 import type { CreatedCard } from '../cardApi';
 import { preparePhoto } from '../photo';
@@ -17,11 +20,12 @@ import {
   supabaseUrl,
 } from '../supabase';
 import type { CategoryOption } from '../supabase';
-import { colors, ELEMENT_INFO } from '../theme';
+import { haptic, playSfx } from '../sfx';
+import { colors, ELEMENT_INFO, fonts, radius } from '../theme';
 import type { Element } from '../motor';
 
 /** Largura da carta no resultado (a altura sai da proporção em layout.ts). */
-const CARD_WIDTH = 160;
+const CARD_WIDTH = 210;
 
 interface Props {
   onBack: () => void;
@@ -51,13 +55,21 @@ export function CreateCardScreen({ onBack }: Props) {
       .catch((e: Error) => setStep({ kind: 'error', photo: null, message: e.message, code: 'categories' }));
   }, []);
 
+  // Carta pronta: som e vibração de "revelação" (uma vez por carta).
+  const createdId = step.kind === 'done' ? step.card.id : null;
+  useEffect(() => {
+    if (!createdId) return;
+    playSfx('reveal');
+    haptic('success');
+  }, [createdId]);
+
   if (!isSupabaseConfigured) {
     return (
       <Layout onBack={onBack} title="Criar carta">
-        <Text style={styles.text}>
-          O app ainda não sabe onde fica o servidor. Copie <Text style={styles.bold}>app/.env.example</Text> para{' '}
-          <Text style={styles.bold}>app/.env.local</Text>, preencha a URL e a chave pública do Supabase e reinicie com{' '}
-          <Text style={styles.bold}>npx expo start -c</Text>.
+        <Text style={ui.dim}>
+          O app ainda não sabe onde fica o servidor. Copie <Text style={ui.strong}>app/.env.example</Text> para{' '}
+          <Text style={ui.strong}>app/.env.local</Text>, preencha a URL e a chave pública do Supabase e reinicie com{' '}
+          <Text style={ui.strong}>npx expo start -c</Text>.
         </Text>
       </Layout>
     );
@@ -120,14 +132,25 @@ export function CreateCardScreen({ onBack }: Props) {
     return (
       <View style={styles.cameraRoot}>
         <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+        {/* Guia no formato da carta: o que fica dentro é o que aparece nela. Não bloqueia o toque. */}
+        <View style={styles.guideLayer}>
+          <View style={styles.guide} />
+          <Text style={styles.guideText}>Enquadre aqui o que vai virar carta</Text>
+        </View>
         <View style={styles.cameraBar}>
-          <Button label="Cancelar" variant="secondary" onPress={() => setStep({ kind: 'idle' })} />
+          <View style={styles.cameraSide}>
+            <Button label="Cancelar" variant="secondary" size="md" onPress={() => setStep({ kind: 'idle' })} />
+          </View>
           <Pressable
+            accessibilityRole="button"
             accessibilityLabel="Tirar foto"
             onPress={takePicture}
             disabled={capturing}
             style={[styles.shutter, capturing && { opacity: 0.4 }]}
-          />
+          >
+            <View style={styles.shutterInner} />
+          </Pressable>
+          <View style={styles.cameraSide} />
         </View>
       </View>
     );
@@ -137,13 +160,17 @@ export function CreateCardScreen({ onBack }: Props) {
     <Layout onBack={onBack} title="Criar carta">
       {step.kind === 'idle' && (
         <>
-          <Text style={styles.text}>
+          <View style={styles.placeholder}>
+            <Icon name="image-plus" size={44} color={colors.accent} />
+            <Text style={styles.placeholderText}>Sua foto aqui</Text>
+          </View>
+          <Text style={[ui.dim, styles.center]}>
             Tire uma foto de algo real (um bicho, uma planta, um objeto). O servidor sorteia a raridade e os atributos, e
             a foto vira a sua carta. Fotos quase iguais a uma já usada são recusadas.
           </Text>
-          <Button label="Abrir a câmera" onPress={openCamera} />
+          <Button label="Abrir a câmera" icon="camera" onPress={openCamera} />
           {permission && !permission.granted && !permission.canAskAgain && (
-            <Text style={styles.warn}>A câmera está bloqueada. Libere nas configurações do celular para este app.</Text>
+            <Text style={ui.warn}>A câmera está bloqueada. Libere nas configurações do celular para este app.</Text>
           )}
           {Platform.OS === 'web' && <Button label="Escolher arquivo (só teste no computador)" variant="secondary" onPress={pickFileForWebTest} />}
         </>
@@ -152,15 +179,21 @@ export function CreateCardScreen({ onBack }: Props) {
       {step.kind === 'category' && (
         <>
           <Image source={{ uri: step.photo.uri }} style={styles.photo} />
-          <Text style={styles.subtitle}>O que tem na foto?</Text>
+          <Text style={[ui.section, styles.center]}>O que tem na foto?</Text>
           <View style={styles.chips}>
-            {categories.map((c) => (
-              <Pressable key={c.slug} style={styles.chip} onPress={() => void send(step.photo, c.slug)}>
-                <Text style={styles.chipText}>
-                  {ELEMENT_INFO[c.element as Element]?.emoji ?? ''} {c.nome}
-                </Text>
-              </Pressable>
-            ))}
+            {categories.map((c) => {
+              const element = ELEMENT_INFO[c.element as Element];
+              return (
+                <Pressable key={c.slug} accessibilityRole="button" style={styles.chip} onPress={() => void send(step.photo, c.slug)}>
+                  {element && (
+                    <View style={[styles.chipDot, { backgroundColor: element.color }]}>
+                      <Icon name={element.icon} size={12} color={element.onColor} />
+                    </View>
+                  )}
+                  <Text style={styles.chipText}>{c.nome}</Text>
+                </Pressable>
+              );
+            })}
           </View>
           {categories.length === 0 && <ActivityIndicator color={colors.accent} />}
           <Button label="Cancelar" variant="secondary" onPress={() => setStep({ kind: 'idle' })} />
@@ -171,17 +204,18 @@ export function CreateCardScreen({ onBack }: Props) {
         <>
           <Image source={{ uri: step.photo.uri }} style={styles.photo} />
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={styles.text}>Criando a carta...</Text>
+          <Text style={[ui.dim, styles.center]}>Criando a carta...</Text>
         </>
       )}
 
       {step.kind === 'done' && (
         <>
           <View style={styles.cardBox}>
-            <CardView card={toCardDef(step.card)} width={CARD_WIDTH} photoUri={step.photo.uri} />
+            {/* key = id da carta: carta nova entra com a animação de novo. */}
+            <CardView key={step.card.id} card={toCardDef(step.card)} width={CARD_WIDTH} photoUri={step.photo.uri} appear />
           </View>
           {step.card.bonusPoints > 0 && (
-            <Text style={styles.good}>Bônus da categoria: +{step.card.bonusPoints} de poder</Text>
+            <Text style={[ui.ok, styles.center]}>Bônus da categoria: +{step.card.bonusPoints} de poder</Text>
           )}
           <Button label="Criar outra carta" onPress={() => setStep({ kind: 'idle' })} />
         </>
@@ -189,7 +223,10 @@ export function CreateCardScreen({ onBack }: Props) {
 
       {step.kind === 'error' && (
         <>
-          <Text style={styles.bad}>{step.message}</Text>
+          <View style={styles.centerBox}>
+            <Icon name="alert-circle-outline" size={44} color={colors.badSoft} />
+          </View>
+          <Text style={[ui.body, styles.center]}>{step.message}</Text>
           {step.photo && ['network', 'classifier_unavailable', 'internal', 'unexpected', 'unknown'].includes(step.code) && (
             <Button label="Tentar de novo" onPress={() => void send(step.photo as PreparedPhoto, step.category)} />
           )}
@@ -202,29 +239,52 @@ export function CreateCardScreen({ onBack }: Props) {
 
 function Layout({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+    <Screen title={title} onBack={onBack} centered>
       {children}
-      <Button label="Menu" variant="secondary" onPress={onBack} />
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, gap: 16, flexGrow: 1, justifyContent: 'center' },
-  title: { color: colors.text, fontSize: 30, fontWeight: '900', textAlign: 'center' },
-  subtitle: { color: colors.text, fontSize: 18, fontWeight: '800', textAlign: 'center' },
-  text: { color: colors.textDim, fontSize: 15, lineHeight: 22 },
-  bold: { color: colors.text, fontWeight: '700' },
-  warn: { color: colors.warn, fontSize: 14 },
-  bad: { color: colors.bad, fontSize: 16, textAlign: 'center' },
-  good: { color: colors.good, fontSize: 15, textAlign: 'center' },
-  photo: { width: '100%', height: 220, borderRadius: 12, backgroundColor: colors.panel },
-  cardBox: { alignSelf: 'center' },
+  center: { textAlign: 'center' },
+  centerBox: { alignItems: 'center' },
+  placeholder: {
+    alignSelf: 'center',
+    width: 150,
+    height: 150 / 0.72,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  placeholderText: { fontFamily: fonts.bodySemi, color: colors.textDim, fontSize: 13 },
+  photo: { width: '100%', height: 220, borderRadius: radius.lg, backgroundColor: colors.surface },
+  cardBox: { alignSelf: 'center', paddingVertical: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  chip: { backgroundColor: colors.panelAlt, borderColor: colors.border, borderWidth: 1, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14 },
-  chipText: { color: colors.text, fontSize: 15 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 40,
+    backgroundColor: colors.raised,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingVertical: 6,
+    paddingLeft: 8,
+    paddingRight: 14,
+  },
+  chipDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  chipText: { fontFamily: fonts.bodySemi, color: colors.text, fontSize: 15 },
   cameraRoot: { flex: 1, backgroundColor: '#000' },
-  cameraBar: { position: 'absolute', bottom: 32, left: 24, right: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 5, borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.35)' },
+  guideLayer: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 12, paddingBottom: 110, pointerEvents: 'none' },
+  guide: { width: '72%', maxWidth: 320, aspectRatio: 0.72, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255, 255, 255, 0.85)' },
+  guideText: { fontFamily: fonts.bodySemi, color: '#FFFFFF', fontSize: 13, textShadowColor: 'rgba(0, 0, 0, 0.8)', textShadowRadius: 4 },
+  cameraBar: { position: 'absolute', bottom: 28, left: 20, right: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cameraSide: { flex: 1, alignItems: 'flex-start' },
+  shutter: { width: 76, height: 76, borderRadius: 38, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  shutterInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.accent },
 });

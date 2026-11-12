@@ -7,7 +7,8 @@ Contexto do projeto dividido por área, para cada agente ler só o que precisa. 
 | Se você trabalha em... | Leia | Pasta de código |
 | --- | --- | --- |
 | Regras, fórmulas, balanceamento | `visao-geral.md`, `game-design.md`, `engine.md` | `engine/` |
-| App (telas, navegação, câmera) | `visao-geral.md`, `app.md`, `game-design.md` (resumo das regras), `engine.md` (só a API) | `app/` |
+| App (telas, navegação, câmera) | `visao-geral.md`, `app.md`, `design.md`, `game-design.md` (resumo das regras), `engine.md` (só a API) | `app/` |
+| Aparência (cores, carta, animações, sons) | `design.md`, `app.md` | `app/` |
 | Servidor (banco, login, partidas online) | `visao-geral.md`, `backend.md`, `partidas-online.md` (fase 4), `engine.md` (só a API) | `supabase/` |
 | Geração de cartas a partir de foto, moderação | `visao-geral.md`, `geracao-cartas.md`, `game-design.md` (fórmulas), `backend.md` | `supabase/` e `app/` (partes da câmera) |
 | Coordenação, novas threads | `agentes.md`, `decisoes.md` | — |
@@ -21,6 +22,7 @@ Todo mundo deve passar por `visao-geral.md` na primeira vez.
 - [`game-design.md`](game-design.md) — regras, elementos, raridades, fórmulas e valores.
 - [`engine.md`](engine.md) — motor de combate, API, simulador, achados de balanceamento.
 - [`app.md`](app.md) — app Expo: stack, telas previstas, como testar no celular.
+- [`design.md`](design.md) — identidade visual "Arena": tokens, anatomia da carta, peças prontas, animações, sons e como trocar o tema.
 - [`backend.md`](backend.md) — Supabase: dados, segurança, login.
 - [`partidas-online.md`](partidas-online.md) — fase 4: 1x1 por convite, turnos no servidor, tempo de turno, privacidade da mão.
 - [`geracao-cartas.md`](geracao-cartas.md) — da foto à carta, duplicatas, moderação e privacidade.

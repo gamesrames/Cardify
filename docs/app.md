@@ -12,7 +12,9 @@ Telas mínimas da fase 1 **implementadas** (PR em revisão): Início → escolhe
 
 **Fase 4 (partida online 1x1, 2026-11-09):** botão "Jogar online com um amigo" no menu (só com servidor e login), telas `OnlineScreen` (criar partida, entrar com código, continuar a partida em aberto) e `OnlineGameScreen` (espera com o código, partida e fim). Verificado no navegador (Playwright, 2 jogadores em contextos separados, 390x844) contra o **handler e o banco reais** da função `match` por um servidor falso local: criar, entrar, jogar, desistir, estouro de tempo, recarregar e continuar. **Não verificado:** o Supabase de verdade (Realtime, Storage com fotos, função publicada) e o celular. Veja a seção "Fase 4" abaixo e `partidas-online.md`.
 
-Animações continuam fora. A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
+**Design visual (2026-11-11):** todas as telas passaram para a identidade "Arena" (tema central, carta nova, ícones no lugar de emoji, animações e sons). Aparência, tokens, peças prontas e o que conferir no celular estão em [`design.md`](design.md). Verificado no navegador em tamanho de iPhone 14 Pro Max e Poco; **celular ainda não**. Os textos mais antigos deste doc que citam emoji ("🏳️ Desistir", "⏱ 0:42") descrevem a mesma função, hoje com ícone.
+
+A coleção e o baralho próprio ("Meu baralho") entraram na fase 2, veja abaixo; os 5 baralhos prontos (`PREBUILT_DECKS`) seguem disponíveis.
 
 ## Fase 2: tela "Criar carta" (PR separado do PR do servidor)
 
@@ -98,10 +100,13 @@ app/
     motor.ts                 ÚNICO ponto que importa o motor (re-exporta engine/src/index.ts)
     useGame.ts               hook: guarda o GameState, aplica ações, faz o bot jogar (pausa de 0,8 s por ação)
     describeEvent.ts         transforma GameEvent em linhas de log em português
-    theme.ts                 cores, emojis e nomes de elementos e raridades
+    theme/                   identidade visual (cores, fontes, elementos, raridades); ver design.md
+    sfx.ts                   sons e vibração (liga/desliga guardado no aparelho)
     layout.ts                tamanho das cartas a partir da janela (test/layout.test.ts garante que a partida cabe na tela)
-    components/              Button, CardView (só desenha dados)
-    screens/                 HomeScreen, DeckPickScreen, GameScreen
+    components/              Screen, Button, Dialog, Icon, ui, CardView, Board e BattleTable (a mesa das duas partidas)
+    screens/                 uma por tela; só juntam dados e peças, sem cor ou fonte digitada
+  assets/sfx/                efeitos sonoros (gerados por scripts/gerar-sons.py)
+  scripts/                   gerar-sons.py e gerar-icones.py
 ```
 
 ## Como as telas usam o motor
@@ -140,7 +145,7 @@ Se não conectar:
 ### Roteiro de validação (critério de "pronto")
 
 1. Início → "Jogar contra o bot" → escolha um baralho → "Jogar".
-2. Na sua vez: toque numa carta da mão (as que você não pode pagar ou não cabem ficam apagadas), depois numa posição vazia marcada em verde. Repita enquanto tiver energia.
+2. Na sua vez: toque numa carta da mão (as que você não pode pagar ou não cabem ficam apagadas), depois numa posição vazia marcada em verde-limão ("Jogar aqui"). Repita enquanto tiver energia.
 3. Toque em "Encerrar turno". Suas cartas atacam; o bot joga em seguida e o log mostra tudo.
 4. Jogue até a vida de alguém chegar a 0. Deve aparecer o vencedor com "Revanche", "Escolher outro baralho" e "Menu".
 5. Repita no iPhone e no Android. Anote qualquer travamento, texto cortado ou botão difícil de tocar.
@@ -151,7 +156,7 @@ Botão voltar do Android durante a partida pede confirmação antes de sair.
 
 ## Testes do app
 
-`cd app && npm test` (vitest) e `npm run typecheck`. Hoje cobrem o cálculo de tamanho das cartas (`layout.ts`): a partida precisa caber na altura de desktop e de celular. Mudou o layout da `GameScreen` (barras, botão, log)? Reveja `NON_CARD_HEIGHT` em `layout.ts`; o teste acusa se ficar curto.
+`cd app && npm test` (vitest) e `npm run typecheck`. Hoje cobrem o cálculo de tamanho das cartas (`layout.ts`): a partida precisa caber na altura de desktop e de celular. Mudou o layout da mesa (`BattleTable`: barras, botão, log)? Reveja `NON_CARD_HEIGHT` em `layout.ts`; o teste acusa se ficar curto.
 
 ## Histórico de correções
 
@@ -169,3 +174,4 @@ Botão voltar do Android durante a partida pede confirmação antes de sair.
 - Adicione pacotes com `npx expo install <pacote>` (escolhe a versão compatível com o SDK). Se a rede bloquear a consulta, use `npm install <pacote>@<versão de node_modules/expo/bundledNativeModules.json>`.
 - Entregar arquivos completos e dizer onde cada um fica.
 - Comentários e textos de interface em português (pt-BR).
+- Aparência: nada de cor, fonte ou emoji digitado na tela; use `src/theme` e as peças de `components/` (ver [`design.md`](design.md)).
