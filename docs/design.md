@@ -128,4 +128,4 @@ Mostradas ao usuário em 2026-11-11 junto com a Arena; registradas para o caso d
 - Animação de ataque golpe a golpe (ver "Limite conhecido").
 - O leque da tela inicial usar as cartas de foto do próprio jogador quando ele tiver.
 - Revisar os sons depois de ouvidos no aparelho.
-- Telas da fase 5 (progressão e ranking): seguir este doc e as peças prontas.
+- Telas da fase 5 (progressão e ranking) feitas com as peças prontas (`app.md`, "Fase 5"); a thread de design pode refinar a aparência.

@@ -11,6 +11,7 @@ import { emailToHandle } from './src/authText';
 import { useAuth } from './src/useAuth';
 import { AccountScreen } from './src/screens/AccountScreen';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
+import { ProgressScreen } from './src/screens/ProgressScreen';
 import { MyDeckScreen } from './src/screens/MyDeckScreen';
 import { CreateCardScreen } from './src/screens/CreateCardScreen';
 import { DeckPickScreen } from './src/screens/DeckPickScreen';
@@ -30,6 +31,7 @@ type Screen =
   | { name: 'create' }
   | { name: 'mydeck' }
   | { name: 'account' }
+  | { name: 'progress' }
   | { name: 'online' }
   | { name: 'onlinegame'; matchId: string }
   | { name: 'game'; playerDeck: string; botDeck: string; seed: number };
@@ -112,6 +114,10 @@ export default function App() {
           <SafeAreaView style={styles.root}>
             <OnlineScreen onOpenMatch={(matchId) => setScreen({ name: 'onlinegame', matchId })} onBack={() => setScreen({ name: 'home' })} />
           </SafeAreaView>
+        ) : screen.name === 'progress' && user ? (
+          <SafeAreaView style={styles.root}>
+            <ProgressScreen onBack={() => setScreen({ name: 'home' })} />
+          </SafeAreaView>
         ) : screen.name === 'mydeck' ? (
           <SafeAreaView style={styles.root}>
             <MyDeckScreen userId={user?.id ?? null} isGuest={user?.isAnonymous ?? false} onPlay={playMyDeck} onBack={() => setScreen({ name: 'home' })} />
@@ -132,6 +138,7 @@ export default function App() {
                 onPlay={() => setScreen({ name: 'decks' })}
                 onCreateCard={() => setScreen({ name: 'create' })}
                 onMyDeck={() => setScreen({ name: 'mydeck' })}
+                onProgress={user ? () => setScreen({ name: 'progress' }) : undefined}
                 onOnline={user ? () => setScreen({ name: 'online' }) : undefined}
                 onAccount={user ? () => setScreen({ name: 'account' }) : undefined}
                 accountLabel={user ? (user.isAnonymous ? 'Convidado · criar conta' : `Conta: ${emailToHandle(user.email) ?? user.email ?? 'minha conta'}`) : undefined}

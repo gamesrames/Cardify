@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-**Fase 5 (progressão e ranking) em andamento (2026-11-11):** regras, simulação e SQL prontos e testados no computador; telas do app e aplicação no Supabase pendentes (`progressao.md`).
+**Fase 5 (progressão e ranking) em andamento (2026-11-11):** regras, simulação, SQL e telas do app prontos e testados no computador; aplicar a migração no Supabase e testar em navegador real/celular pendentes (`progressao.md`).
 
 Fases 1 e 2 no `main` (motor, app Expo, foto vira carta, "Meu baralho"). **Fase 3 (contas e nuvem) pronta no navegador** (2026-11-09): conta criada a partir do convidado mantendo as cartas, baralho na nuvem, entrar de novo e em aba anônima mostram a mesma coleção. **Celular físico ainda pendente** (fases 1 a 3) e o login por apelido + senha é provisório. **Fase 4 (PvP online por convite) em andamento:** servidor e telas do app escritos e testados no computador (navegador contra o handler e o banco reais), ainda não publicados no Supabase nem testados em celular (`partidas-online.md`). Critério de pronto da fase 3 na tabela abaixo (detalhado em `backend.md`).
 

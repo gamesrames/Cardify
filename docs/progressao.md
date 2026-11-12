@@ -4,7 +4,7 @@ Dono: thread da fase 5 (toca `engine/`, `supabase/` e, depois, `app/`). Fórmula
 
 ## Estado atual
 
-**Pausado no meio (2026-11-11), retomado em seguida.** Pronto e testado no computador: regras do motor (`engine/src/progression.ts`, 17 testes), simulador (`npm run sim:upgrades`), migração `20261111000001_progressao_ranking.sql` e 12 testes dela contra o banco real em memória, cruzando o SQL com o motor. **Ainda não existe:** as telas do app (esperam o design visual entrar no `main`) e nada foi aplicado no Supabase de verdade. A migração é aditiva: o app e a função `match` atuais seguem funcionando sem ela e com ela.
+**Pronto e testado no computador:** regras do motor (`engine/src/progression.ts`, 17 testes), simulador (`npm run sim:upgrades`), migração `20261111000001_progressao_ranking.sql` com 12 testes contra o banco real em memória (SQL cruzado com o motor), e as **telas do app** (Progressão, Ranking e ganho no fim da partida online; `app.md`, "Fase 5"), 6 testes novos no app. As telas foram vistas no navegador (393x873) com um servidor falso que imita as respostas do Supabase. **Nada foi aplicado no Supabase de verdade nem testado em celular.** A migração é aditiva: o app e a função `match` atuais seguem funcionando sem ela; sem ela, as telas novas mostram "o servidor ainda não tem a progressão".
 
 ## Escolhas padrão (a pessoa estava indisponível; reversíveis, aguardam revisão)
 
@@ -50,9 +50,15 @@ Só há **uma migração**; nenhuma função nova nem republicação.
 3. Table Editor → `player_stats`: os dois jogadores aparecem; o vencedor com rating 1016 e 30 de `essence`, o perdedor com 984 e 10 (se a partida teve 6 turnos ou mais). `match_results` tem uma linha da partida.
 4. Desista no primeiro turno de outra partida: o rating mexe (±16), a Essência não.
 
-**Depois que as telas existirem (a escrever com o app):** ver a Essência e o rating, melhorar uma carta de foto (+vida / +ataque), tentar passar do teto e sem saldo, abrir o ranking e o histórico, e ver o ganho na tela de fim de partida; repetir no celular.
+**Com as telas (app atualizado, migração aplicada):**
+1. Menu → **Progressão** (só com login). Em cima: Essência, Rating e V-D-E. Quem nunca jogou online vê 0, 1000 e 0-0-0.
+2. Depois de ganhar Essência numa partida online: aba **Melhorar cartas** → "+1 vida · 10" (ou ataque, que custa o dobro) numa carta de foto. O saldo cai, a carta sobe e "Melhoria x/y" avança. No limite, o botão diz "(limite)"; sem saldo, fica apagado.
+3. Abra "Meu baralho": a carta melhorada vem com os atributos novos e o poder total do baralho sobe (limite 110). Se passar, o baralho fica inválido até você ajustar.
+4. Aba **Ranking**: lista com você destacado e "Suas últimas partidas" (resultado, ±rating, +Essência).
+5. No fim de uma partida online, a janela de resultado mostra o rating e a Essência ganhos (pode levar 1 a 2 segundos para aparecer).
 
 ## O que ficou sem verificar
 
 - Nada foi aplicado no Supabase real (o ambiente das threads não alcança o projeto): o SQL foi testado num Postgres em memória (PGlite) com as migrações das fases 2 a 5.
-- `leaderboard` e `my_match_history` chamadas pela API do Supabase (PostgREST) com o login de verdade; telas e celular.
+- `leaderboard`, `my_match_history`, `upgrade_card` e as leituras de `player_stats`/`match_results` chamadas pela API do Supabase (PostgREST) com o login de verdade: nos testes do app elas foram imitadas por um servidor falso, e no SQL chamadas pelos papéis do banco.
+- Telas no celular (iPhone e Poco).

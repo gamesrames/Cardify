@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BattleTable } from '../components/BattleTable';
 import { Button } from '../components/Button';
 import { Dialog } from '../components/Dialog';
+import { MatchReward } from '../components/MatchReward';
 import { ui } from '../components/ui';
 import { CardPhotosProvider } from '../cardPhotos';
 import { describeEvents } from '../describeEvent';
@@ -208,6 +209,7 @@ export function OnlineGameScreen({ matchId, onExit }: Props) {
             <Text style={[ui.dim, styles.center]}>
               Vida final: você {Math.max(0, g.me.hp)} · {foeName} {Math.max(0, g.foe.hp)} · {g.turn} turnos
             </Text>
+            <MatchReward matchId={matchId} seat={g.seat} />
             <Button label="Menu" onPress={onExit} />
           </Dialog>
         )}
