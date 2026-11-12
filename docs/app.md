@@ -175,3 +175,11 @@ Botão voltar do Android durante a partida pede confirmação antes de sair.
 - Entregar arquivos completos e dizer onde cada um fica.
 - Comentários e textos de interface em português (pt-BR).
 - Aparência: nada de cor, fonte ou emoji digitado na tela; use `src/theme` e as peças de `components/` (ver [`design.md`](design.md)).
+
+## Fase 5: progressão e ranking
+
+Botão **Progressão** no menu (só com servidor e login) abre `ProgressScreen`: resumo (Essência, Rating, V-D-E), aba **Melhorar cartas** (cartas de foto, "+1 vida" e "+1 ataque" com custo, "Melhoria x/y", "(limite)" e apagado sem saldo) e aba **Ranking** (top 50 com a própria linha destacada e as últimas 10 partidas). Na janela de fim da partida online, `MatchReward` mostra o rating e a Essência ganhos (consulta `match_results` até 6 vezes, porque o servidor pontua logo depois de terminar; se a migração não existe, some em silêncio). Feito com as peças do design (`Screen`, `Button`, `CardView`, `ui`, `Icon`), sem cor, fonte nem emoji digitados; ícones novos: `diamond-stone`, `plus`, `podium`, `history`.
+
+- Arquivos: `src/progress.ts` (tipos, opções de melhoria pelo `checkUpgrade` do motor, textos e tradução de erros; sem React Native), `src/progressClient.ts` (chamadas ao Supabase), `src/screens/ProgressScreen.tsx`, `src/components/MatchReward.tsx`; mexidas pequenas em `App.tsx`, `HomeScreen.tsx` (3º atalho), `OnlineGameScreen.tsx` (uma linha) e `Icon.tsx`. Teste: `test/progress.test.ts`.
+- O app só **mostra** custos (calculados pelo motor); quem decide é o servidor (`upgrade_card`). Regras e escolhas padrão: [`progressao.md`](progressao.md).
+- Verificado no navegador (Playwright, 393x873, servidor falso): menu, comprar duas melhorias (saldo 45 → 25, carta 6 → 8 de vida), limite, ranking e histórico, sem erro no console. **Não verificado:** Supabase real, celular, a janela de fim de partida com o ganho (só o componente e o contrato).

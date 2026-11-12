@@ -17,6 +17,8 @@ interface Props {
   onPlay: () => void;
   onCreateCard: () => void;
   onMyDeck: () => void;
+  /** Progressão e ranking só existem com servidor (modo offline: o botão some). */
+  onProgress?: () => void;
   /** Sem servidor configurado (modo offline) não há partida online: o botão some. */
   onOnline?: () => void;
   /** Sem servidor configurado (modo offline) não há conta: o botão some. */
@@ -37,7 +39,7 @@ function advantagePairs(): [Element, Element][] {
 // Cartas de enfeite do leque da tela inicial (três das 30 fixas, de elementos e raridades diferentes).
 const SHOWCASE = [getCard('planta-cervo'), getCard('fogo-fenix'), getCard('agua-tubarao')] as const;
 
-export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onOnline, onAccount, accountLabel }: Props) {
+export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onProgress, onOnline, onAccount, accountLabel }: Props) {
   const r = DEFAULT_RULES;
   const window = useWindowDimensions();
   const [showRules, setShowRules] = useState(false);
@@ -89,6 +91,7 @@ export function HomeScreen({ onPlay, onCreateCard, onMyDeck, onOnline, onAccount
           <View style={styles.tiles}>
             <Tile label="Meu baralho" icon="cards-outline" onPress={onMyDeck} />
             <Tile label="Criar carta" icon="camera" onPress={onCreateCard} />
+            {onProgress && <Tile label="Progressão" icon="podium" onPress={onProgress} />}
           </View>
         </View>
 

@@ -10,6 +10,8 @@ Escrito e testado no computador e **publicado no projeto Supabase `cardify`** (p
 
 **Fase 4 (servidor, 2026-11-09):** migração `20261109000002_partidas_online.sql` (`matches`, `match_views`, funções `match_*`, policy de fotos do adversário, Realtime) e Edge Function `match`, **ainda não publicadas** (passos em [`partidas-online.md`](partidas-online.md)). Tudo sobre partidas (contrato, tempo de turno, privacidade) fica nesse doc, não aqui.
 
+**Fase 5 (escrita e testada no computador, ainda não aplicada):** migração `20261111000001_progressao_ranking.sql` com `player_stats`, `match_results`, `upgrade_rules`, colunas `upgrade_attack`/`upgrade_health` em `cards`, trigger de fim de partida (rating e Essência), `upgrade_card`, `leaderboard` e `my_match_history`. Detalhes, passo a passo e roteiro em [`progressao.md`](progressao.md). Não exige republicar nenhuma função.
+
 ## Decidido
 
 - Supabase: banco Postgres, login, armazenamento de fotos, tempo real e Edge Functions.

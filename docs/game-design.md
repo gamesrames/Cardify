@@ -40,9 +40,18 @@ Fogo > Planta > Terra > Ar > Água > Fogo
 
 - **Limite de poder do baralho: 110** (soma dos poderes das 7 cartas).
 - **Bônus por categoria da foto** (fase 2): até **+10% do orçamento** (arredondado para baixo, **mínimo +1** quando a categoria tem bônus), e conta para o limite do baralho. Exemplo: galinha ganha mais que formiga, mas nunca muito. Teto por raridade: comum +1, incomum +1, rara +1, épica +2, lendária +2.
-- **Melhoria de carta** (fase 5): até **+25%** do orçamento, arredondado para baixo, com teto por raridade (comum +2, incomum +3, rara +4, épica +6, lendária +7).
+- **Melhoria de carta** (fase 5, regras abaixo em "Progressão e ranking"): até **+25%** do orçamento, arredondado para baixo, com teto por raridade (comum +2, incomum +3, rara +4, épica +6, lendária +7).
 - **Teto de poder de uma carta** = orçamento + bônus de foto + melhoria (comum 12, incomum 19, rara 23, épica 35, lendária 37). `validateDeck` aceita cartas até esse teto; o limite de 110 do baralho conta o **poder real** das cartas.
 - Atributos e raridade vêm sempre do servidor; o cliente nunca decide.
+
+## Progressão e ranking (fase 5)
+
+Referência em código: `engine/src/progression.ts` (`DEFAULT_PROGRESSION`); o servidor copia estes números em `upgrade_rules` e `app_config`. Escolhas padrão provisórias, listadas com alternativas em [`progressao.md`](progressao.md).
+
+- **Essência** é o único recurso. Vem só de partidas online: vitória 30, empate 20, derrota 10 (0 para quem desistiu, estourou o tempo ou sumiu); partida com menos de 6 turnos não paga.
+- **Melhoria** (só cartas de foto): +1 vida = 1 ponto de poder, +1 ataque = 2 pontos. Teto por raridade: comum 2, incomum 3, rara 4, épica 6, lendária 7 (25% do orçamento, para baixo; é o `upgradeCap` que já entra no teto de poder da carta). Custo em Essência por ponto: comum 10, incomum 15, rara 20, épica 30, lendária 40. O poder melhorado conta nos 110 do baralho.
+- **Rating Elo:** começa em 1000; chance esperada = 1 / (1 + 10^((rival − meu) / 400)); variação = arredondar(32 × (resultado − esperada)), com resultado 1, 0,5 ou 0; soma zero entre os dois, piso 0. O mesmo par pontua no máximo 10 partidas por dia (3 no final); as seguintes são amistosas.
+- **Balanceamento:** melhorar até 110 de poder (+9) dá ~69% de vitória contra baralho sem melhoria; entre dois melhorados ~50%. Detalhes e opções em `progressao.md`.
 
 ## Cartas fixas da fase 1
 

@@ -6,3 +6,4 @@ export * from './deck';
 export * from './game';
 export * from './bots';
 export * from './view';
+export * from './progression';

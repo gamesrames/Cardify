@@ -35,7 +35,11 @@ export type IconName =
   | 'check-circle'
   | 'alert-circle-outline'
   | 'image-plus'
-  | 'close';
+  | 'close'
+  | 'diamond-stone'
+  | 'plus'
+  | 'podium'
+  | 'history';
 
 interface Props {
   name: IconName;

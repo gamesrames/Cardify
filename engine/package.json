@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "sim": "tsx sim/run.ts"
+    "sim": "tsx sim/run.ts",
+    "sim:upgrades": "tsx sim/upgrades.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
